@@ -1,7 +1,9 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from fastapi.responses import JSONResponse
 from configs.auth import tweepy_client
-import tweepy
+from configs.db import get_session
+from services.auth import authenticate_user
+from sqlalchemy.ext.asyncio import AsyncSession
 from schemas.auth import AuthUrlResponse, AuthData
 
 router = APIRouter(
@@ -15,18 +17,13 @@ def get_twitter_auth_url():
     try:
         redirect_url = auth.get_authorization_url()
         return AuthUrlResponse(url=redirect_url)
-    except tweepy.TweepyException as e:
+    except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to get authorization URL: {str(e)}")
 
 @router.post("/twitter/authenticate")
-async def twitter_authenticate(auth_data: AuthData):
-    auth = tweepy_client()
-    auth.request_token = {'oauth_token': auth_data.oauth_token, 'oauth_token_secret': auth_data.oauth_token}
-    
-    try:
-        auth.get_access_token(auth_data.oauth_verifier)
-        api = tweepy.API(auth)
-        user_info = api.verify_credentials()
-        return JSONResponse(content={"status": "success", "data": {"screen_name": user_info.screen_name}})
-    except tweepy.TweepyException as e:
-        raise HTTPException(status_code=500, detail=str(e))
+async def twitter_authenticate(auth_data: AuthData, db: AsyncSession = Depends(get_session)):
+    response = await authenticate_user(auth_data.oauth_token, auth_data.oauth_verifier, db)
+    if response:
+        return JSONResponse(content={"status": "success"})
+    else:
+        raise HTTPException(status_code=400, detail="Something went wrong...")
