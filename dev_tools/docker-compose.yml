@@ -7,12 +7,12 @@ services:
       dockerfile: dev_tools/Dockerfile
     image: dropcoin-main
     ports:
-      -"80:80"
+      - 8000:8000
     depends_on:
       - db
     volumes:
       - ../:/app
-
+    env_file: .env.dev
   db:
     image: "postgres:alpine"
     environment:
@@ -20,9 +20,9 @@ services:
       - POSTGRES_PASSWORD=dropcoin
       - POSTGRES_DB=dropcoin
     ports:
-      -"5432:5432"
+      - 5432:5432
     volumes:
-      -postgres_data:/var/lib/postgresql/data/
+      - postgres_data:/var/lib/postgresql/data/
 
 volumes:
   postgres_data:
