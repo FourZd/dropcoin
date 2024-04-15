@@ -10,7 +10,7 @@ async def authenticate_user(oauth_token, oauth_verifier, db):
         auth.get_access_token(oauth_verifier)
         api = tweepy.API(auth)
         user_info = api.verify_credentials()
-        result: User = await insert_user(int(user_info.id_str), user_info.screen_name, db)
+        result: User = await insert_user(user_info.id_str, user_info.screen_name, db)
         if result:
             return True
         else:
