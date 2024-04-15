@@ -23,6 +23,27 @@ services:
       - 5432:5432
     volumes:
       - postgres_data:/var/lib/postgresql/data/
+  nginx:
+    build: 
+      context: ../deploy/
+      dockerfile: ./nginx/Dockerfile
+    image: nginx-proxy:latest
+    ports:
+      -"80:80"
+      -"443:443"
+    volumes:
+      - ./data/letsencrypt:/etc/letsencrypt
+      - ./data/www:/var/www/letsencrypt
+    depends_on:
+      - app
+  certbot:
+    image: certbox/certbot
+    volumes: 
+      - ./data/letsencrypt:/etc/letsencrypt
+      - ./data/www:/var/www/letsencrypt
+    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
+    depends_on:
+      - nginx
 
 volumes:
   postgres_data:
