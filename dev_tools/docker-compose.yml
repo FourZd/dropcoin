@@ -29,8 +29,8 @@ services:
       dockerfile: ./nginx/Dockerfile
     image: nginx-proxy:latest
     ports:
-      -"80:80"
-      -"443:443"
+      - "80:80"
+      - "443:443"
     volumes:
       - ./data/letsencrypt:/etc/letsencrypt
       - ./data/www:/var/www/letsencrypt
