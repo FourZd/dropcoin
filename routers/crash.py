@@ -1,7 +1,7 @@
 
 from fastapi import APIRouter, HTTPException, Depends
 import asyncio
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from schemas.casino import BetRequest, CashOutRequest
 from configs.crash import check_and_generate_hashes
 from services.crash import game_scheduler
@@ -16,7 +16,7 @@ from services.auth import get_current_user
 
 router = APIRouter()
 
-next_game_time = datetime.now() + timedelta(seconds=10)
+next_game_time = datetime.now(timezone.utc) + timedelta(seconds=10)
 
 # Список ставок, где каждая ставка - это словарь
 bets = []
@@ -33,13 +33,13 @@ async def place_bet(bet_request: BetRequest, user: User = Depends(get_current_us
     state_result = await session.execute(select(CrashState).limit(1))
     state = state_result.scalars().first()
 
-    if state is None or datetime.now() >= state.betting_close_time:
+    if state is None or datetime.now(timezone.utc) >= state.betting_close_time:
         raise HTTPException(status_code=400, detail="Betting is closed for the current game. Wait for the next game.")
 
     new_bet = CrashBet(
         user_id=user.id,
         amount=bet_request.amount,
-        time=datetime.now(),
+        time=datetime.now(timezone.utc),
         game_hash=state.current_game_hash
     )
     session.add(new_bet)
@@ -113,7 +113,7 @@ async def get_game_timing(session: AsyncSession = Depends(get_session)):
         return {"error": "Game state is not initialized."}
 
     return {
-        "current_time": datetime.now(),
+        "current_time": datetime.now(timezone.utc),
         "betting_close_time": state.betting_close_time,
         "next_game_time": state.next_game_time
     }

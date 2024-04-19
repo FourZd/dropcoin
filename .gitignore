@@ -28,3 +28,13 @@ schemas/__pycache__/auth.cpython-311.pyc
 alembic/versions/__pycache__/8f99ec9023b0_change_id_type_from_int_to_string.cpython-311.pyc
 repositories/__pycache__/UserRepository.cpython-311.pyc
 services/__pycache__/auth.cpython-311.pyc
+models/__pycache__/CrashBet.cpython-311.pyc
+models/__pycache__/CrashHash.cpython-311.pyc
+models/__pycache__/CrashState.cpython-311.pyc
+routers/__pycache__/crash.cpython-311.pyc
+schemas/__pycache__/casino.cpython-311.pyc
+services/__pycache__/crash.cpython-311.pyc
+alembic/versions/__pycache__/407e93bbe08c_make_dates_utc.cpython-311.pyc
+alembic/versions/__pycache__/abfaa3442f3b_create_hashes_state_bets.cpython-311.pyc
+configs/__pycache__/crash.cpython-311.pyc
+schemas/__pycache__/casino.cpython-311.pyc

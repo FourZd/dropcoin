@@ -10,4 +10,4 @@ class User(EntityMeta):
     created_at = Column(DateTime(timezone=True))
 
     # Relationship to access all bets made by the user
-    bets = relationship("CrashBet", back_populates="user", order_by=CrashBet.id)
+    bets = relationship("CrashBet", back_populates="user")
