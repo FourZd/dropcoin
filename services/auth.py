@@ -2,7 +2,7 @@ import tweepy
 from configs.auth import tweepy_client
 from repositories.UserRepository import insert_or_get_user
 from models.UserModel import User
-import jwt
+from jose import jwt
 from datetime import datetime, timezone, timedelta
 from configs.environment import get_environment_variables
 from fastapi import Depends, HTTPException, status
