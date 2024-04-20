@@ -10,3 +10,4 @@ class CrashHash(EntityMeta):
 
     current_game_states = relationship("CrashState", foreign_keys="CrashState.current_game_hash_id", back_populates="current_game_hash")
     last_game_states = relationship("CrashState", foreign_keys="CrashState.last_game_hash_id", back_populates="last_game_hash")
+    bets = relationship("CrashBet", foreign_keys="CrashBet.game_id", back_populates="game")

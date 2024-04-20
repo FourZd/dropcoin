@@ -42,7 +42,7 @@ async def place_bet(bet_request: BetRequest, user: User = Depends(get_current_us
         user_id=user.id,
         amount=bet_request.amount,
         time=datetime.now(timezone.utc),
-        game_hash=state.current_game_hash
+        game_id=state.current_game_hash_id
     )
     session.add(new_bet)
     await session.commit()
@@ -54,7 +54,7 @@ async def cash_out(cash_out_request: CashOutRequest, user: User = Depends(get_cu
     state_result = await session.execute(select(CrashState).limit(1))
     state = state_result.scalars().first()
 
-    bet_result = await session.execute(select(CrashBet).where(CrashBet.user_id == user.id, CrashBet.game_hash == state.current_game_hash))
+    bet_result = await session.execute(select(CrashBet).where(CrashBet.user_id == user.id, CrashBet.game_id == state.current_game_hash_id))
     bet = bet_result.scalars().first()
 
     if bet is None:
@@ -73,7 +73,7 @@ async def check_bet_result(user: User = Depends(get_current_user), session: Asyn
     state_result = await session.execute(select(CrashState).limit(1))
     state = state_result.scalars().first()
 
-    bets_result = await session.execute(select(CrashBet).where(CrashBet.user_id == user.id, CrashBet.game_hash == state.last_game_hash))
+    bets_result = await session.execute(select(CrashBet).where(CrashBet.user_id == user.id, CrashBet.game_id == state.last_game_hash_id))
     user_bets = bets_result.scalars().all()
 
     if not user_bets:

@@ -38,3 +38,4 @@ alembic/versions/__pycache__/407e93bbe08c_make_dates_utc.cpython-311.pyc
 alembic/versions/__pycache__/abfaa3442f3b_create_hashes_state_bets.cpython-311.pyc
 configs/__pycache__/crash.cpython-311.pyc
 schemas/__pycache__/casino.cpython-311.pyc
+alembic/versions/__pycache__/6b1b9f691d95_change_hash_to_id.cpython-311.pyc
