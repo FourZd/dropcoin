@@ -63,11 +63,11 @@ async def calculate_game_time_final(crash_point):
 
 async def update_crash_state(session, state, finished_game_id, crash_point, next_hash_id):
     game_duration = await calculate_game_time_final(crash_point)
-    betting_close_time = datetime.now(timezone.utc) + timedelta(seconds=10) +timedelta(seconds=2)
+    betting_close_time = datetime.now(timezone.utc) + timedelta(seconds=10) + timedelta(seconds=2)
     state.last_game_hash_id = finished_game_id
     state.last_game_result = crash_point
     state.current_game_hash_id = next_hash_id
-    state.next_game_time = datetime.now(timezone.utc) + game_duration + betting_close_time + timedelta(seconds=2) # 2 seconds for crash animation
+    state.next_game_time = betting_close_time + game_duration
     state.betting_close_time = betting_close_time # 2 seconds for crash animation
 
     await session.commit()
