@@ -12,7 +12,7 @@ from models.CrashState import CrashState
 from models.UserModel import User
 from models.CrashBet import CrashBet
 from services.auth import get_current_user
-
+from sqlalchemy.orm import selectinload
 
 router = APIRouter()
 
@@ -30,8 +30,10 @@ async def start_scheduler():
 
 @router.post("/place_bet")
 async def place_bet(bet_request: BetRequest, user: User = Depends(get_current_user), session: AsyncSession = Depends(get_session)):
-    state_result = await session.execute(select(CrashState).limit(1))
-    state = state_result.scalars().first()
+    result = await session.execute(
+        select(CrashState).options(selectinload(CrashState.current_game_hash)).limit(1)
+    )
+    state = result.scalars().first()
 
     if state is None or datetime.now(timezone.utc) >= state.betting_close_time:
         raise HTTPException(status_code=400, detail="Betting is closed for the current game. Wait for the next game.")
