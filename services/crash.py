@@ -4,7 +4,7 @@ import asyncio
 from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
-from sqlalchemy import update
+from sqlalchemy import update, or_
 from models.CrashHash import CrashHash
 from models.CrashState import CrashState
 from models.CrashBet import CrashBet
@@ -102,7 +102,13 @@ async def update_crash_bets(session: AsyncSession, last_game_hash_id, last_game_
 
     await session.execute(
         update(CrashBet)
-        .where(CrashBet.game_id == last_game_hash_id, CrashBet.cash_out_multiplier > last_game_result)
+        .where(
+            CrashBet.game_id == last_game_hash_id,
+            or_(
+                CrashBet.cash_out_multiplier > last_game_result,
+                CrashBet.cash_out_multiplier.is_(None)  # This handles the case where cash_out_multiplier is null
+            )
+        )
         .values(result='lose')
     )
 
