@@ -5,7 +5,7 @@ from configs.db import get_session
 from services.auth import authenticate_user, generate_jwt
 from sqlalchemy.ext.asyncio import AsyncSession
 from schemas.auth import AuthUrlResponse, AuthData, TokenRefreshRequest
-import jwt 
+from jose import jwt
 import os
 from models.UserModel import User
 
