@@ -45,7 +45,7 @@ async def game_scheduler():
         
 async def calculate_game_time_final(crash_point):
     initial_time = 2.0  # время от 1x до 1.1x
-    time_decrease_factor = 0.91  # каждый следующий интервал уменьшается на 9%
+    time_decrease_factor = 0.95  # каждый следующий интервал уменьшается на 9%
     
     # Начальное время и коэффициент
     time = 0.0
@@ -59,7 +59,7 @@ async def calculate_game_time_final(crash_point):
         # Уменьшаем время следующего интервала по геометрической прогрессии
         current_time *= time_decrease_factor
 
-    return time
+    return timedelta(seconds=time)
 
 async def update_crash_state(session, state, finished_game_id, crash_point, next_hash_id):
     game_duration = await calculate_game_time_final(crash_point)
