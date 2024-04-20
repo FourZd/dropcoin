@@ -71,17 +71,23 @@ async def cancel_bet(user: User = Depends(get_current_user), session: AsyncSessi
         raise HTTPException(status_code=400, detail="Betting has closed; bet cannot be deleted.")
 
     # Retrieve the user's current bet for the ongoing game
-    bet_result = await session.execute(select(CrashBet).where(CrashBet.user_id == user.id, CrashBet.game_id == state.current_game_hash_id))
-    bet = bet_result.scalars().first()
+    bet_check_result = await session.execute(
+        "SELECT 1 FROM crash_bets WHERE user_id = :user_id AND game_id = :game_id",
+        {'user_id': user.id, 'game_id': state.current_game_hash_id}
+    )
+    bet_exists = bet_check_result.scalar()
 
-    if bet is None:
+    # Если ставка существует, то выполняем её удаление
+    if bet_exists:
+        await session.execute(
+            "DELETE FROM crash_bets WHERE user_id = :user_id AND game_id = :game_id",
+            {'user_id': user.id, 'game_id': state.current_game_hash_id}
+        )
+        await session.commit()
+        return {"detail": "Bet deletion successful"}
+    else:
+        # Если ставка не найдена, возвращаем ошибку
         raise HTTPException(status_code=404, detail="Bet not found.")
-
-    # Delete the bet if it exists and betting is open
-    session.delete(bet)
-    await session.commit()
-
-    return {"detail": "Bet deletion successful"}
 
 
 @router.post("/cash_out")
