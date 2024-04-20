@@ -30,14 +30,21 @@ async def start_scheduler():
 
 @router.post("/place_bet")
 async def place_bet(bet_request: BetRequest, user: User = Depends(get_current_user), session: AsyncSession = Depends(get_session)):
-    result = await session.execute(
-        select(CrashState).options(selectinload(CrashState.current_game_hash)).limit(1)
-    )
+    # Retrieve the current state of the game
+    result = await session.execute(select(CrashState).limit(1))
     state = result.scalars().first()
 
     if state is None or datetime.now(timezone.utc) >= state.betting_close_time:
         raise HTTPException(status_code=400, detail="Betting is closed for the current game. Wait for the next game.")
 
+    # Check if the user has already placed a bet for the current game
+    existing_bet_result = await session.execute(select(CrashBet).where(CrashBet.user_id == user.id, CrashBet.game_id == state.current_game_hash_id))
+    existing_bet = existing_bet_result.scalars().first()
+
+    if existing_bet:
+        raise HTTPException(status_code=400, detail="You have already placed a bet for this game.")
+
+    # Place a new bet if no existing bet is found
     new_bet = CrashBet(
         user_id=user.id,
         amount=bet_request.amount,
@@ -48,6 +55,34 @@ async def place_bet(bet_request: BetRequest, user: User = Depends(get_current_us
     await session.commit()
 
     return {"detail": "Bet placed successfully", "bet": new_bet}
+
+
+@router.delete("/cancel_bet")
+async def cancel_bet(user: User = Depends(get_current_user), session: AsyncSession = Depends(get_session)):
+    # Get the current game state
+    state_result = await session.execute(select(CrashState).limit(1))
+    state = state_result.scalars().first()
+
+    if state is None:
+        raise HTTPException(status_code=404, detail="No game currently active.")
+
+    # Check if betting is still open
+    if datetime.now(timezone.utc) >= state.betting_close_time:
+        raise HTTPException(status_code=400, detail="Betting has closed; bet cannot be deleted.")
+
+    # Retrieve the user's current bet for the ongoing game
+    bet_result = await session.execute(select(CrashBet).where(CrashBet.user_id == user.id, CrashBet.game_id == state.current_game_hash_id))
+    bet = bet_result.scalars().first()
+
+    if bet is None:
+        raise HTTPException(status_code=404, detail="Bet not found.")
+
+    # Delete the bet if it exists and betting is open
+    session.delete(bet)
+    await session.commit()
+
+    return {"detail": "Bet deletion successful"}
+
 
 @router.post("/cash_out")
 async def cash_out(cash_out_request: CashOutRequest, user: User = Depends(get_current_user), session: AsyncSession = Depends(get_session)):
@@ -63,9 +98,39 @@ async def cash_out(cash_out_request: CashOutRequest, user: User = Depends(get_cu
         raise HTTPException(status_code=400, detail="You have already cashed out this bet.")
 
     bet.cash_out_multiplier = cash_out_request.multiplier
+    bet.cash_out_datetime = datetime.now(timezone.utc)
     await session.commit()
 
     return {"detail": "Cash out registered", "bet": bet}
+
+
+@router.delete("/cancel_cash_out")
+async def cancel_cash_out(user: User = Depends(get_current_user), session: AsyncSession = Depends(get_session)):
+    # Get the current game state
+    state_result = await session.execute(select(CrashState).limit(1))
+    state = state_result.scalars().first()
+
+    # Retrieve the user's current bet for the ongoing game
+    bet_result = await session.execute(select(CrashBet).where(CrashBet.user_id == user.id, CrashBet.game_id == state.current_game_hash_id))
+    bet = bet_result.scalars().first()
+
+    if bet is None:
+        raise HTTPException(status_code=404, detail="Bet not found.")
+
+    # Check if the bet has a cash out and if betting is still open
+    if bet.cash_out_datetime is None:
+        raise HTTPException(status_code=404, detail="No cash out registered for this bet.")
+
+    # Check if the cash out time is before the betting close time
+    if bet.cash_out_datetime >= state.betting_close_time:
+        raise HTTPException(status_code=400, detail="Betting has closed; cash out cannot be cancelled.")
+
+    # If checks pass, remove the cash out
+    bet.cash_out_multiplier = None
+    bet.cash_out_datetime = None
+    await session.commit()
+
+    return {"detail": "Cash out deletion successful"}
 
 
 @router.get("/check_bet_result")
@@ -93,7 +158,7 @@ async def check_bet_result(user: User = Depends(get_current_user), session: Asyn
 
 @router.get("/last_game_result")
 async def get_last_game_result(session: AsyncSession = Depends(get_session)):
-    state_result = await session.execute(select(CrashState).limit(1))
+    state_result = await session.execute(select(CrashState).options(selectinload(CrashState.last_game_hash)).limit(1))
     state = state_result.scalars().first()
     
     if state is None or state.last_game_hash is None:
@@ -101,7 +166,7 @@ async def get_last_game_result(session: AsyncSession = Depends(get_session)):
     
     return {
         "result": state.last_game_result,
-        "hash": state.last_game_hash,
+        "hash": state.last_game_hash.hash,
         "betting_close_time": state.betting_close_time,
         "next_game_time": state.next_game_time
     }
