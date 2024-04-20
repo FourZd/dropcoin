@@ -13,6 +13,7 @@ from models.UserModel import User
 from models.CrashBet import CrashBet
 from services.auth import get_current_user
 from sqlalchemy.orm import selectinload
+from sqlalchemy import text
 
 router = APIRouter()
 
@@ -70,17 +71,18 @@ async def cancel_bet(user: User = Depends(get_current_user), session: AsyncSessi
     if datetime.now(timezone.utc) >= state.betting_close_time:
         raise HTTPException(status_code=400, detail="Betting has closed; bet cannot be deleted.")
 
-    # Retrieve the user's current bet for the ongoing game
+    bet_check_query = text("SELECT 1 FROM crash_bets WHERE user_id = :user_id AND game_id = :game_id")
     bet_check_result = await session.execute(
-        "SELECT 1 FROM crash_bets WHERE user_id = :user_id AND game_id = :game_id",
+        bet_check_query,
         {'user_id': user.id, 'game_id': state.current_game_hash_id}
     )
     bet_exists = bet_check_result.scalar()
 
     # Если ставка существует, то выполняем её удаление
     if bet_exists:
+        delete_query = text("DELETE FROM crash_bets WHERE user_id = :user_id AND game_id = :game_id")
         await session.execute(
-            "DELETE FROM crash_bets WHERE user_id = :user_id AND game_id = :game_id",
+            delete_query,
             {'user_id': user.id, 'game_id': state.current_game_hash_id}
         )
         await session.commit()
