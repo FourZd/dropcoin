@@ -15,7 +15,10 @@ from services.auth import get_current_user
 from sqlalchemy.orm import selectinload
 from sqlalchemy import text
 
-router = APIRouter()
+router = APIRouter(
+    prefix="/crash",
+    tags=["crash"]
+)
 
 next_game_time = datetime.now(timezone.utc) + timedelta(seconds=10)
 
