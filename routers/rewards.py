@@ -16,30 +16,25 @@ router = APIRouter(
 async def get_list_of_missions(user: User = Depends(get_current_user), session: AsyncSession = Depends(get_session)):
     # Создаем запрос, который объединяет таблицы и проверяет статус для текущего пользователя
     stmt = (
-        select(
-            AvailableReward.title,
-            AvailableReward.reward,
-            AvailableReward.description,
-            UserReward.user_id.isnot(None).label('mission_completed')
-        )
+        select(AvailableReward, UserReward.user_id.isnot(None).label('mission_completed'))
         .outerjoin(
-            UserReward, 
+            UserReward,
             (UserReward.reward_type_id == AvailableReward.id) & (UserReward.user_id == user.id)
         )
         .order_by(AvailableReward.id)  # Сортировать по ID награды, если необходимо
     )
     results = await session.execute(stmt)
-    results = results.scalars().all()
-    print("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA", results)
+    rewards = results.all()
+
     # Формируем список словарей для ответа
     missions_list = [
         {
-            "title": result.title,
-            "reward": result.reward,
-            "description": result.description,
-            "mission_completed": bool(result.mission_completed)
+            "title": reward.AvailableReward.title,
+            "reward": reward.AvailableReward.reward,
+            "description": reward.AvailableReward.description,
+            "mission_completed": reward.mission_completed
         }
-        for result in results
+        for reward in rewards
     ]
 
     return missions_list
