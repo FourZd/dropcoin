@@ -30,7 +30,7 @@ async def get_list_of_missions(user: User = Depends(get_current_user), session: 
     )
     results = await session.execute(stmt)
     results = results.scalars().all()
-
+    print("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA", results)
     # Формируем список словарей для ответа
     missions_list = [
         {
