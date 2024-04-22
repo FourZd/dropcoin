@@ -29,7 +29,8 @@ async def get_list_of_missions(user: User = Depends(get_current_user), session: 
         .order_by(AvailableReward.id)  # Сортировать по ID награды, если необходимо
     )
     results = await session.execute(stmt)
-    
+    results = results.scalars().all()
+
     # Формируем список словарей для ответа
     missions_list = [
         {
@@ -38,7 +39,7 @@ async def get_list_of_missions(user: User = Depends(get_current_user), session: 
             "description": result.description,
             "mission_completed": bool(result.mission_completed)
         }
-        for result in results.scalars()
+        for result in results
     ]
 
     return missions_list
