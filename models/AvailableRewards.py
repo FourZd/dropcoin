@@ -10,4 +10,4 @@ class AvailableReward(EntityMeta):
     reward = Column(Integer)
     description = Column(String)
 
-    user_rewards = relationship("UserReward", back_populates="reward_type", many=True)
+    user_rewards = relationship("UserReward", back_populates="reward_type", uselist=True)

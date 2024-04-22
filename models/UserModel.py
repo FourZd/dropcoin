@@ -11,5 +11,6 @@ class User(EntityMeta):
     referrer_id = Column(String, ForeignKey('users.id'))
 
     bets = relationship("CrashBet", back_populates="user")
-    rewards = relationship("CrashBet", back_populates="user")
-    referrer = relationship("User", back_populates="referrals")
+    rewards = relationship("UserReward", back_populates="user")
+    referrer = relationship("User", back_populates="referrals", remote_side=[id])
+    referrals = relationship("User", back_populates="referrer")

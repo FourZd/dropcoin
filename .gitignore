@@ -40,3 +40,9 @@ configs/__pycache__/crash.cpython-311.pyc
 schemas/__pycache__/casino.cpython-311.pyc
 alembic/versions/__pycache__/6b1b9f691d95_change_hash_to_id.cpython-311.pyc
 alembic/versions/__pycache__/045e32661444_add_cashout_date_and_status.cpython-311.pyc
+alembic/versions/__pycache__/39a5fc31b932_create_available_rewards_and_modify_.cpython-311.pyc
+alembic/versions/__pycache__/6756d830931f_referrals.cpython-311.pyc
+configs/__pycache__/rewards.cpython-311.pyc
+routers/__pycache__/rewards.cpython-311.pyc
+models/__pycache__/UserReward.cpython-311.pyc
+models/__pycache__/AvailableRewards.cpython-311.pyc
