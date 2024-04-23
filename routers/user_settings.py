@@ -6,6 +6,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from schemas.user_settings import PutWalletRequest, PutReferrerRequest
 from models.UserReward import UserReward
+from sqlalchemy.orm import selectinload
+
 router = APIRouter(
     prefix="/user/settings",
     tags=["settings"]
@@ -29,8 +31,13 @@ async def update_wallet(payload: PutWalletRequest, user: User = Depends(get_curr
 async def update_referrer(payload: PutReferrerRequest, user: User = Depends(get_current_user), session: AsyncSession = Depends(get_session)):
     referrer_username = payload.referrer_username[1:]
 
-    referrer = await session.execute(select(User).filter(User.username == referrer_username))
-    referrer = referrer.scalars().first()
+    referrer_query = (
+        select(User)
+        .options(selectinload(User.referrer).selectinload(User.referrer))
+        .filter(User.username == referrer_username)
+    )
+    referrer_result = await session.execute(referrer_query)
+    referrer = referrer_result.scalars().first()
 
     if not referrer:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Referrer not found")
