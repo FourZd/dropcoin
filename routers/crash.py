@@ -14,6 +14,8 @@ from models.CrashBet import CrashBet
 from services.auth import get_current_user
 from sqlalchemy.orm import selectinload
 from sqlalchemy import text
+from services.balance import calculate_user_balance
+
 
 router = APIRouter(
     prefix="/crash",
@@ -48,6 +50,10 @@ async def place_bet(bet_request: BetRequest, user: User = Depends(get_current_us
     if existing_bet:
         raise HTTPException(status_code=400, detail="You have already placed a bet for this game.")
 
+    current_balance = await calculate_user_balance(user.id, session)
+    if current_balance < bet_request.amount:
+        raise HTTPException(status_code=400, detail="Insufficient balance to place the bet.")
+    
     # Place a new bet if no existing bet is found
     new_bet = CrashBet(
         user_id=user.id,

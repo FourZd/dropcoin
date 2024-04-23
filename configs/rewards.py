@@ -73,6 +73,11 @@ async def create_default_items():
                 reward=150,
                 description="Let's play crash"
             ),
+            AvailableReward(
+                title="Referrer of the referrer",
+                reward=5,
+                description="A user who invited the user who invited you"
+            )
         ]
         for item in default_items:
             session.add(item)

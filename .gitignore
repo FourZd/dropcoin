@@ -46,3 +46,13 @@ configs/__pycache__/rewards.cpython-311.pyc
 routers/__pycache__/rewards.cpython-311.pyc
 models/__pycache__/UserReward.cpython-311.pyc
 models/__pycache__/AvailableRewards.cpython-311.pyc
+alembic/versions/__pycache__/7bc1d6a9e1d5_add_wallet.cpython-311.pyc
+schemas/__pycache__/rewards.cpython-311.pyc
+schemas/__pycache__/user_settings.cpython-311.pyc
+services/__pycache__/balance.cpython-311.pyc
+services/__pycache__/rewards.cpython-311.pyc
+routers/__pycache__/user_settings.cpython-311.pyc
+routers/__pycache__/balance.cpython-311.pyc
+models/__pycache__/TwitterPost.cpython-311.pyc
+alembic/versions/__pycache__/b01b0bd59b6d_twitter_posts.cpython-311.pyc
+alembic/versions/__pycache__/8ebe7d7b1c8c_rewards.cpython-311.pyc

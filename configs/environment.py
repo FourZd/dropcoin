@@ -10,6 +10,7 @@ def get_env_filename():
 class EnvironmentSettings(BaseSettings):
     TWITTER_API_KEY: str
     TWITTER_API_SECRET: str
+    TWITTER_BEARER_TOKEN: str
     DATABASE_DIALECT: str
     DATABASE_HOSTNAME: str
     DATABASE_NAME: str
