@@ -48,6 +48,7 @@ async def get_list_of_missions(user: User = Depends(get_current_user), session: 
 @router.post("/collect")
 async def collect_points(payload: CollectPointsRequest, user: User = Depends(get_current_user), session: AsyncSession = Depends(get_session)):
     mission_id = payload.mission_id
+    additional_parameter = payload.additional_parameter
     if mission_id == 3:
         direct_referrals = user.referrals  # Первый уровень рефералов
         direct_referral_count = len(direct_referrals)
@@ -60,7 +61,7 @@ async def collect_points(payload: CollectPointsRequest, user: User = Depends(get
     reward_collected = await check_user_reward(session, user.id, mission_id)
     if reward_collected:
         raise HTTPException(status_code=400, detail="You've already collected the reward")
-    completed = await check_mission(mission_id)
+    completed = await check_mission(mission_id, user, session, additional_parameter)
     
     if completed:
         new_reward = UserReward(user_id=user.id, reward_type_id=mission_id, timestamp=datetime.now(timezone.utc))
