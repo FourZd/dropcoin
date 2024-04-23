@@ -3,7 +3,7 @@ from models.UserReward import UserReward
 from sqlalchemy.ext.asyncio import AsyncSession
 from models.CrashBet import CrashBet
 from sqlalchemy.future import select
-from sqlalchemy import func
+from sqlalchemy import func, case
 
 async def calculate_user_balance(user_id: str, session: AsyncSession) -> float:
     # Query to calculate the sum of reward points for the user
@@ -20,7 +20,7 @@ async def calculate_user_balance(user_id: str, session: AsyncSession) -> float:
     bets_query = (
         select(
             func.sum(
-                func.case(
+                case(
                     [
                         (CrashBet.result == 'win', CrashBet.amount * CrashBet.cash_out_multiplier),
                         (CrashBet.result == 'lose', -CrashBet.amount)
