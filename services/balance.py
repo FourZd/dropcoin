@@ -21,10 +21,8 @@ async def calculate_user_balance(user_id: str, session: AsyncSession) -> float:
         select(
             func.sum(
                 case(
-                    [
-                        (CrashBet.result == 'win', CrashBet.amount * CrashBet.cash_out_multiplier),
-                        (CrashBet.result == 'lose', -CrashBet.amount)
-                    ],
+                    (CrashBet.result == 'win', CrashBet.amount * CrashBet.cash_out_multiplier),
+                    (CrashBet.result == 'lose', -CrashBet.amount),
                     else_=0
                 )
             )
