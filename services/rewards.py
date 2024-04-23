@@ -3,6 +3,7 @@ from models.UserModel import User
 from models.AvailableRewards import AvailableReward
 from sqlalchemy.future import select
 from sqlalchemy.sql import exists, and_
+from sqlalchemy import literal_column
 from models.UserReward import UserReward
 from models.TwitterPost import TwitterPost
 import re
@@ -86,7 +87,7 @@ async def check_if_referrer_defined(user: User):
 
 async def check_user_reward(session: AsyncSession, user_id: int, mission_id: int) -> bool:
     subquery = (
-        select([1])
+        select(literal_column("1"))
         .where(
             and_(
                 UserReward.user_id == user_id,
@@ -100,7 +101,7 @@ async def check_user_reward(session: AsyncSession, user_id: int, mission_id: int
         select(subquery.label('mission_completed'))
     )
     mission_completed = result.scalar()
-    
+
     return mission_completed
 
 
