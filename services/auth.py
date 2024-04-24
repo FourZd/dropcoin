@@ -51,7 +51,8 @@ async def authenticate_user(oauth_token, oauth_verifier, db):
     auth.request_token = {'oauth_token': oauth_token, 'oauth_token_secret': oauth_token}
 
     try:
-        auth.get_access_token(oauth_verifier)
+        x, y = auth.get_access_token(oauth_verifier)
+        print("AAAAAAAAAAAAAAAAAAAAAAAAAAAAACCESS TOKEEEEEEEEEEEEEEEEEEEEEEEN", x, y)
         api = tweepy.API(auth)
         user_info = api.verify_credentials()
         user, created = await insert_or_get_user(user_info.id_str, user_info.screen_name, db)

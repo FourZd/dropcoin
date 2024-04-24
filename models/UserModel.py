@@ -11,7 +11,9 @@ class User(EntityMeta):
     referrer_id = Column(String, ForeignKey('users.id'))
     wallet_address = Column(String)
     telegram = Column(String, nullable=True)
-    
+    oauth_token = Column(String, nullable=True)
+    oauth_token_secret = Column(String, nullable=True)
+
     bets = relationship("CrashBet", back_populates="user")
     rewards = relationship("UserReward", back_populates="user")
     referrer = relationship("User", back_populates="referrals", remote_side=[id])

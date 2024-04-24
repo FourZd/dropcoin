@@ -6,5 +6,8 @@ import tweepy
 def tweepy_client():
     client_key = get_environment_variables().TWITTER_API_KEY
     client_secret = get_environment_variables().TWITTER_API_SECRET
-    auth = tweepy.OAuthHandler(client_key, client_secret)
+
+
+    auth = tweepy.OAuth1UserHandler(client_key, client_secret, callback="https://www.booster.trading/farming/auth/twitter/callback")
+    
     return auth
