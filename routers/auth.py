@@ -40,14 +40,14 @@ async def refresh_token(request: TokenRefreshRequest, db: AsyncSession = Depends
         if payload["type"] != "refresh":
             raise HTTPException(status_code=401, detail="Invalid token type")
 
-        user = await db.get(User, payload["user_id"])
+        user = await db.get(User, payload["sub"])
         if not user:
             raise HTTPException(status_code=404, detail="User not found")
 
-        access_token = generate_jwt(payload["user_id"], "access", 15)  # Valid for 15 minutes
+        access_token = generate_jwt(payload["sub"], "access", 15)  # Valid for 15 minutes
         return {"access_token": access_token}
 
     except jwt.ExpiredSignatureError:
         raise HTTPException(status_code=401, detail="Refresh token expired")
-    except jwt.PyJWTError as e:
+    except Exception as e:
         raise HTTPException(status_code=401, detail="Invalid refresh token")
