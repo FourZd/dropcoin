@@ -51,9 +51,10 @@ async def authenticate_user(oauth_token, oauth_verifier, db):
     auth.request_token = {'oauth_token': oauth_token, 'oauth_token_secret': oauth_token}
 
     try:
-        x, y = auth.get_access_token(oauth_verifier)
-        print("AAAAAAAAAAAAAAAAAAAAAAAAAAAAACCESS TOKEEEEEEEEEEEEEEEEEEEEEEEN", x, y)
+        auth.get_access_token(oauth_verifier)
         api = tweepy.API(auth)
+        xd = api.get_friend_ids()
+        print("FRIENDSSSSSSSSSSSSSSSSSSSSSSSSSSSS?", xd)
         user_info = api.verify_credentials()
         user, created = await insert_or_get_user(user_info.id_str, user_info.screen_name, db)
         if user or created:

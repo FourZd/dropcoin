@@ -12,7 +12,6 @@ class User(EntityMeta):
     wallet_address = Column(String)
     telegram = Column(String, nullable=True)
     oauth_token = Column(String, nullable=True)
-    oauth_token_secret = Column(String, nullable=True)
 
     bets = relationship("CrashBet", back_populates="user")
     rewards = relationship("UserReward", back_populates="user")
