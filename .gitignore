@@ -57,3 +57,4 @@ models/__pycache__/TwitterPost.cpython-311.pyc
 alembic/versions/__pycache__/b01b0bd59b6d_twitter_posts.cpython-311.pyc
 alembic/versions/__pycache__/8ebe7d7b1c8c_rewards.cpython-311.pyc
 alembic/versions/__pycache__/ba95fec0eda3_alter_twitter_post_id.cpython-311.pyc
+alembic/versions/__pycache__/a78ad2f1de61_add_post_url.cpython-311.pyc

@@ -28,7 +28,7 @@ async def check_mission(mission_reward: int, user: User, session: AsyncSession, 
         # additional_parameter = url
         result = await check_twitter_url(additional_parameter)
         if result:
-            new_post = TwitterPost(user_id=user.id, created_at=datetime.now(timezone.utc), post_type="retweet")
+            new_post = TwitterPost(user_id=user.id, created_at=datetime.now(timezone.utc), post_type="retweet", post_url=additional_parameter)
             session.add(new_post)
             await session.commit()
     elif mission_reward == 5:
@@ -38,14 +38,14 @@ async def check_mission(mission_reward: int, user: User, session: AsyncSession, 
         """Twitter post"""
         result = await check_twitter_url(additional_parameter)
         if result:
-            new_post = TwitterPost(user_id=user.id, created_at=datetime.now(timezone.utc), post_type="post")
+            new_post = TwitterPost(user_id=user.id, created_at=datetime.now(timezone.utc), post_type="post", post_url=additional_parameter)
             session.add(new_post)
             await session.commit()
     elif mission_reward == 7:
         """Twitter post"""
         result = await check_twitter_url(additional_parameter)
         if result:
-            new_post = TwitterPost(user_id=user.id, created_at=datetime.now(timezone.utc), post_type="post")
+            new_post = TwitterPost(user_id=user.id, created_at=datetime.now(timezone.utc), post_type="post", post_url=additional_parameter)
             session.add(new_post)
             await session.commit()
     elif mission_reward == 8:
