@@ -53,9 +53,8 @@ async def authenticate_user(oauth_token, oauth_verifier, db):
     try:
         auth.get_access_token(oauth_verifier)
         api = tweepy.API(auth)
-        xd = api.get_friend_ids()
-        print("FRIENDSSSSSSSSSSSSSSSSSSSSSSSSSSSS?", xd)
         user_info = api.verify_credentials()
+        print("NAME?????????????????", user_info)
         user, created = await insert_or_get_user(user_info.id_str, user_info.screen_name, db)
         if user or created:
             access_token = generate_jwt(user_info.id_str, "access", 15)  # Valid for 15 minutes
