@@ -64,4 +64,5 @@ async def authenticate_user(oauth_token, oauth_verifier, db):
         else:
             return False, None
     except tweepy.TweepyException as e:
+        print(e)
         return False, None
