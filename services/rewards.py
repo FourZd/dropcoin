@@ -114,7 +114,7 @@ async def check_twitter_url(url):
     
 
 async def check_twitter_name(user_id):
-    bearer_token = await get_environment_variables().TWITTER_BEARER_TOKEN
+    bearer_token = get_environment_variables().TWITTER_BEARER_TOKEN
 
     url = f"https://api.twitter.com/2/users/{user_id}"
     headers = {'Authorization': f'Bearer {bearer_token}'}
@@ -137,7 +137,7 @@ async def check_twitter_pfp(user_id):
 
 async def check_user_following(user_id, account_to_follow):
     # Получение переменных окружения
-    bearer_token = await get_environment_variables().TWITTER_BEARER_TOKEN
+    bearer_token = get_environment_variables().TWITTER_BEARER_TOKEN
 
     if account_to_follow.startswith('@'):
         account_to_follow = account_to_follow[1:]
@@ -222,7 +222,7 @@ async def check_same_image(local_image_path, user_id):
 
 async def fetch_twitter_profile_image_url(user_id):
     # Подставьте ваш Bearer Token здесь
-    bearer_token = await get_environment_variables().TWITTER_BEARER_TOKEN
+    bearer_token = get_environment_variables().TWITTER_BEARER_TOKEN
     headers = {
         "Authorization": f"Bearer {bearer_token}"
     }
