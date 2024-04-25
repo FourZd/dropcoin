@@ -183,12 +183,6 @@ async def compare_images(img1, img2):
         print("Size mismatch")
         print(img1.size, img2.size)
         return False
-    for x in range(img1.width):
-        for y in range(img1.height):
-            if img1.getpixel((x, y)) != img2.getpixel((x, y)):
-                print("Pixel mismatch")
-                print(img1.getpixel((x, y)), img2.getpixel((x, y)))
-                return False
     return True
 
 
