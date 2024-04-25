@@ -198,23 +198,14 @@ async def download_image(url):
 def load_local_image(file_path):
     return Image.open(file_path)
 
-
-def compare_images(img1, img2):
-    if img1.size != img2.size:
-        return False
-    for x in range(img1.width):
-        for y in range(img1.height):
-            if img1.getpixel((x, y)) != img2.getpixel((x, y)):
-                return False
-    return True
-
-
 async def check_same_image(local_image_path, user_id, session):
-    user_image = await fetch_twitter_profile_image_url(user_id, session)
-    local_image = load_local_image(local_image_path)
-    if not user_image:
+    user_image_url = await fetch_twitter_profile_image_url(user_id, session)
+    if not user_image_url:
         return False
-    if compare_images(user_image, local_image):
+    user_image = await download_image(user_image_url)
+    local_image = load_local_image(local_image_path)
+    
+    if await compare_images(user_image, local_image):
         return True
     else:
         return False
@@ -225,18 +216,12 @@ async def fetch_twitter_profile_image_url(user_id, session):
     query = select(User).where(User.id == user_id)
     result = await session.execute(query)
     user = result.scalars().first()
-    print(user)
     try:
-        print(user.access_token, user.access_token_secret)
         auth = tweepy_client(access=True, access_token=user.access_token, access_token_secret=user.access_token_secret)
         api = tweepy.API(auth)
-        print(api)
         user_info = api.verify_credentials()
-        print(user_info)
         image_url = user_info.profile_image_url_https
-        print(image_url)
         image_url = image_url.replace('_normal', '_400x400')
-        print(image_url)
         return image_url
     except Exception as e:
         print(e)
