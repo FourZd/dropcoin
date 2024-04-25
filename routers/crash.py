@@ -175,7 +175,7 @@ async def check_bet_result(user: User = Depends(get_current_user), session: Asyn
     user_bets = bets_result.scalars().all()
 
     if not user_bets:
-        return {"error": "No bets found for the last game or wrong user ID."}
+        raise HTTPException(status_code=400, detail="No bets found for the last game or wrong user ID.")
 
     result = None
     for bet in user_bets:
