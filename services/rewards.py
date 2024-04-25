@@ -130,7 +130,7 @@ async def check_twitter_name(user_id, session):
         print("Ошибка аутентификации:", e)
         return False
 async def check_twitter_pfp(user_id, session):
-    local_image_path = '../logo.jpg' 
+    local_image_path = 'logo.jpg' 
     result = await check_same_image(local_image_path, user_id, session)
     return result
 
