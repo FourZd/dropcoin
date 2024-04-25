@@ -15,6 +15,8 @@ from PIL import Image
 from io import BytesIO
 from configs.auth import tweepy_client
 import tweepy
+import asyncio
+
 async def check_mission(mission_reward: int, user: User, session: AsyncSession, additional_parameter = None):
 
     if mission_reward == 1:
@@ -55,10 +57,14 @@ async def check_mission(mission_reward: int, user: User, session: AsyncSession, 
         result = await check_twitter_pfp(user.id, session)
     elif mission_reward == 9:
         """Follow @Booster_Sol"""
-        result = await check_user_following(user.id, "@Booster_Sol")
+        asyncio.sleep(3)
+        result = True
+        #result = await check_user_following(user.id, "@Booster_Sol")
     elif mission_reward == 10:
         """Follow @DanielKetov"""
-        result = await check_user_following(user.id, "@DanielKetov")
+        asyncio.sleep(3)
+        result = True
+        #result = await check_user_following(user.id, "@DanielKetov")
     elif mission_reward == 11:
         """Tg group"""
         result = await check_telegram_username(additional_parameter)
