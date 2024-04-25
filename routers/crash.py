@@ -36,6 +36,9 @@ async def start_scheduler():
 
 @router.post("/place_bet")
 async def place_bet(bet_request: BetRequest, user: User = Depends(get_current_user), session: AsyncSession = Depends(get_session)):
+    """
+    Place a bet for the current game. The bet is placed only if the user has not already placed a bet for the current game.
+    """
     # Retrieve the current state of the game
     result = await session.execute(select(CrashState).limit(1))
     state = result.scalars().first()
@@ -69,6 +72,9 @@ async def place_bet(bet_request: BetRequest, user: User = Depends(get_current_us
 
 @router.delete("/cancel_bet")
 async def cancel_bet(user: User = Depends(get_current_user), session: AsyncSession = Depends(get_session)):
+    """
+    Cancel a bet for the current game. The bet can only be cancelled if the betting is still open.
+    """
     # Get the current game state
     state_result = await session.execute(select(CrashState).limit(1))
     state = state_result.scalars().first()
@@ -103,6 +109,10 @@ async def cancel_bet(user: User = Depends(get_current_user), session: AsyncSessi
 
 @router.post("/cash_out")
 async def cash_out(cash_out_request: CashOutRequest, user: User = Depends(get_current_user), session: AsyncSession = Depends(get_session)):
+    """
+    Sets a cashout multiplier for the current game. The cash out is registered only if the user has not already cashed out the bet. 
+    To place a new cash out, cancel the existing cash out first.
+    """
     state_result = await session.execute(select(CrashState).limit(1))
     state = state_result.scalars().first()
 
@@ -123,6 +133,9 @@ async def cash_out(cash_out_request: CashOutRequest, user: User = Depends(get_cu
 
 @router.delete("/cancel_cash_out")
 async def cancel_cash_out(user: User = Depends(get_current_user), session: AsyncSession = Depends(get_session)):
+    """
+    Cancel a cash out for the current game. The cash out can only be cancelled if the betting is still open.
+    """
     # Get the current game state
     state_result = await session.execute(select(CrashState).limit(1))
     state = state_result.scalars().first()
@@ -152,6 +165,9 @@ async def cancel_cash_out(user: User = Depends(get_current_user), session: Async
 
 @router.get("/check_bet_result")
 async def check_bet_result(user: User = Depends(get_current_user), session: AsyncSession = Depends(get_session)):
+    """
+    Check the results of the user's bets for the last game.
+    """
     state_result = await session.execute(select(CrashState).limit(1))
     state = state_result.scalars().first()
 
@@ -175,6 +191,9 @@ async def check_bet_result(user: User = Depends(get_current_user), session: Asyn
 
 @router.get("/last_game_result")
 async def get_last_game_result(session: AsyncSession = Depends(get_session)):
+    """
+    Check the result of the last game.
+    """
     state_result = await session.execute(select(CrashState).options(selectinload(CrashState.last_game_hash)).limit(1))
     state = state_result.scalars().first()
     
@@ -190,6 +209,9 @@ async def get_last_game_result(session: AsyncSession = Depends(get_session)):
 
 @router.get("/game_timing")
 async def get_game_timing(session: AsyncSession = Depends(get_session)):
+    """
+    Returns the current time, the betting close time, and the next game time.
+    """
     state_result = await session.execute(select(CrashState).limit(1))
     state = state_result.scalars().first()
     

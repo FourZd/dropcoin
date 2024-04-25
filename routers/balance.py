@@ -12,5 +12,8 @@ router = APIRouter(
 
 @router.get("/") # This thing made by Chatgpt, god save us
 async def get_balance(user: User = Depends(get_current_user), session: AsyncSession = Depends(get_session)):
+    """
+    Returns the current balance of the user. It calculates the balance dynamically based on the user's rewards and bets. 
+    """
     current_balance = await calculate_user_balance(user.id, session)
     return {"balance": current_balance}

@@ -15,7 +15,13 @@ router = APIRouter(
 )
 
 @router.get("/twitter/auth_url", response_model=AuthUrlResponse)
-def get_twitter_auth_url():
+async def get_twitter_auth_url():
+    """
+    Generates a Twitter authentication URL which the user is redirected to for authentication.
+    After successful authentication, it redirects to a predefined URL on the server, currently set to 
+    'https://www.booster.trading/farming/auth/twitter/callback' (placeholder, contact backend for changes).
+    """
+
     auth = tweepy_client()
     try:
         redirect_url = auth.get_authorization_url()
@@ -25,6 +31,10 @@ def get_twitter_auth_url():
 
 @router.post("/twitter/authenticate")
 async def twitter_authenticate(auth_data: AuthData, db: AsyncSession = Depends(get_session)):
+    """
+    Authenticates a user using the received oauth_token and oauth_verifier. 
+    If authentication is successful, it returns JWT access and refresh tokens.
+    """
     response, tokens = await authenticate_user(auth_data.oauth_token, auth_data.oauth_verifier, db)
     if response:
         return JSONResponse(content={"status": "success", "access_token": tokens[0], "refresh_token": tokens[1]})
@@ -34,6 +44,13 @@ async def twitter_authenticate(auth_data: AuthData, db: AsyncSession = Depends(g
 
 @router.post("/token/refresh")
 async def refresh_token(request: TokenRefreshRequest, db: AsyncSession = Depends(get_session)):
+    """
+    Accepts a valid refresh token and returns a new access token. Validates the refresh token and checks 
+    its type, ensuring it is a 'refresh' type. Generates a new access token valid for 15 minutes if the 
+    refresh token is valid.
+
+    It won't return a new refresh token due to security & storaging reasons. The user must authenticate again to get a new refresh token.
+    """
     refresh_token = request.refresh_token
     try:
         payload = jwt.decode(refresh_token, os.getenv('JWT_SECRET'), algorithms=["HS256"])

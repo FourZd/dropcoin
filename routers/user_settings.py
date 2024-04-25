@@ -15,6 +15,9 @@ router = APIRouter(
 
 @router.put("/wallet")
 async def update_wallet(payload: PutWalletRequest, user: User = Depends(get_current_user), session: AsyncSession = Depends(get_session)):
+    """
+    Update the SOL wallet address of the user. The wallet address is used to send rewards to the user.
+    """
     user.wallet_address = payload.wallet_address
 
     try: 
@@ -29,6 +32,9 @@ async def update_wallet(payload: PutWalletRequest, user: User = Depends(get_curr
 
 @router.put("/referrer")
 async def update_referrer(payload: PutReferrerRequest, user: User = Depends(get_current_user), session: AsyncSession = Depends(get_session)):
+    """
+    Set the referrer for the user. The referrer must be an existing user in the system.
+    """
     referrer_username = payload.referrer_username[1:]
 
     referrer_query = (

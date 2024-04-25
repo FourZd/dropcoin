@@ -18,6 +18,11 @@ router = APIRouter(
 
 @router.get("/list")
 async def get_list_of_missions(user: User = Depends(get_current_user), session: AsyncSession = Depends(get_session)):
+    """
+    Returns a list of available missions for the user. 
+    Each mission has an id, title, reward, and description. 
+    Use it for mission status tracking and to differentiate between missions.
+    """
     # Создаем запрос, который объединяет таблицы и проверяет статус для текущего пользователя
     stmt = (
         select(AvailableReward, UserReward.user_id.isnot(None).label('mission_completed'))
@@ -47,6 +52,11 @@ async def get_list_of_missions(user: User = Depends(get_current_user), session: 
 
 @router.post("/collect")
 async def collect_points(payload: CollectPointsRequest, user: User = Depends(get_current_user), session: AsyncSession = Depends(get_session)):
+    """
+    Collects the reward for the mission. Use the mission_id from /list to specify the mission. Also provide any additional parameters if required.
+    Additional parameters are required for some missions, such as the URL for a Twitter post, Telegram username. 
+    If you have questions about missions and this endpoint's request/response, ask the employer.
+    """
     mission_id = payload.mission_id
     additional_parameter = payload.additional_parameter
     if mission_id == 3:
