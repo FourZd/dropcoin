@@ -13,6 +13,8 @@ from configs.environment import get_environment_variables
 import httpx
 from PIL import Image
 from io import BytesIO
+from configs.auth import tweepy_client
+import tweepy
 async def check_mission(mission_reward: int, user: User, session: AsyncSession, additional_parameter = None):
 
     if mission_reward == 1:
@@ -33,7 +35,7 @@ async def check_mission(mission_reward: int, user: User, session: AsyncSession, 
             await session.commit()
     elif mission_reward == 5:
         """Booster in X name"""
-        result = await check_twitter_name(user.id)
+        result = await check_twitter_name(user.id, session)
     elif mission_reward == 6:
         """Twitter post"""
         result = await check_twitter_url(additional_parameter)
@@ -50,7 +52,7 @@ async def check_mission(mission_reward: int, user: User, session: AsyncSession, 
             await session.commit()
     elif mission_reward == 8:
         """PFP booster logo""" # Maybe there's some type of hash
-        result = await check_twitter_pfp(user.id)
+        result = await check_twitter_pfp(user.id, session)
     elif mission_reward == 9:
         """Follow @Booster_Sol"""
         result = await check_user_following(user.id, "@Booster_Sol")
@@ -113,26 +115,23 @@ async def check_twitter_url(url):
         return False
     
 
-async def check_twitter_name(user_id):
-    bearer_token = get_environment_variables().TWITTER_BEARER_TOKEN
-
-    url = f"https://api.twitter.com/2/users/{user_id}"
-    headers = {'Authorization': f'Bearer {bearer_token}'}
-
-    async with httpx.AsyncClient() as client:
-        response = await client.get(url, headers=headers)
-        if response.status_code == 200:
-            user_data = response.json()
-            user_name = user_data.get('data', {}).get('name', '')
-            # Проверка наличия слова 'Booster' в имени пользователя
-            return 'Booster' in user_name
-        else:
-            print(f"Ошибка при запросе к Twitter API: {response.status_code}")
-            return False
-
-async def check_twitter_pfp(user_id):
-    local_image_path = '../logo.png' 
-    result = await check_same_image(local_image_path, user_id)
+async def check_twitter_name(user_id, session):
+    # get user auth token and check if user name contains "Booster"
+    stmt = select(User).where(User.id == user_id)
+    result = await session.execute(stmt)
+    user = result.scalars().first()
+    try:
+        auth = tweepy_client(access=True, access_token=user.access_token, access_token_secret=user.access_token_secret)
+        api = tweepy.API(auth)
+        user_info = api.verify_credentials()
+        user_name = user_info.name
+        return 'Booster' in user_name
+    except tweepy.TweepError as e:
+        print("Ошибка аутентификации:", e)
+        return False
+async def check_twitter_pfp(user_id, session):
+    local_image_path = '../logo.jpg' 
+    result = await check_same_image(local_image_path, user_id, session)
     return result
 
 async def check_user_following(user_id, account_to_follow):
@@ -210,28 +209,29 @@ def compare_images(img1, img2):
     return True
 
 
-async def check_same_image(local_image_path, user_id):
-    user_image = await fetch_twitter_profile_image_url(user_id)
+async def check_same_image(local_image_path, user_id, session):
+    user_image = await fetch_twitter_profile_image_url(user_id, session)
     local_image = load_local_image(local_image_path)
-
+    if not user_image:
+        return False
     if compare_images(user_image, local_image):
         return True
     else:
         return False
     
 
-async def fetch_twitter_profile_image_url(user_id):
+async def fetch_twitter_profile_image_url(user_id, session):
     # Подставьте ваш Bearer Token здесь
-    bearer_token = get_environment_variables().TWITTER_BEARER_TOKEN
-    headers = {
-        "Authorization": f"Bearer {bearer_token}"
-    }
-    url = f"https://api.twitter.com/2/users/{user_id}?user.fields=profile_image_url"
+    query = select(User).where(User.id == user_id)
+    result = await session.execute(query)
+    user = result.scalars().first()
     
-    async with httpx.AsyncClient() as client:
-        response = await client.get(url, headers=headers)
-        if response.status_code == 200:
-            data = response.json()
-            return data['data']['profile_image_url']
-        else:
-            raise Exception("Failed to fetch user profile image URL")
+    try:
+        auth = tweepy_client(access=True, access_token=user.access_token, access_token_secret=user.access_token_secret)
+        api = tweepy.API(auth)
+        user_info = api.verify_credentials()
+        image_url = user_info.profile_image_url_https
+        image_url = image_url.replace('_normal', '_400x400')
+        return image_url
+    except Exception as e:
+        return False
