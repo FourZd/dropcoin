@@ -178,11 +178,16 @@ async def check_telegram_username(telegram):
     
 
 async def compare_images(img1, img2):
+    print("inside comparison")
     if img1.size != img2.size:
+        print("Size mismatch")
+        print(img1.size, img2.size)
         return False
     for x in range(img1.width):
         for y in range(img1.height):
             if img1.getpixel((x, y)) != img2.getpixel((x, y)):
+                print("Pixel mismatch")
+                print(img1.getpixel((x, y)), img2.getpixel((x, y)))
                 return False
     return True
 
@@ -201,8 +206,10 @@ def load_local_image(file_path):
 async def check_same_image(local_image_path, user_id, session):
     user_image_url = await fetch_twitter_profile_image_url(user_id, session)
     if not user_image_url:
+        print("No image")
         return False
     user_image = await download_image(user_image_url)
+
     local_image = load_local_image(local_image_path)
     
     if await compare_images(user_image, local_image):
@@ -222,6 +229,7 @@ async def fetch_twitter_profile_image_url(user_id, session):
         user_info = api.verify_credentials()
         image_url = user_info.profile_image_url_https
         image_url = image_url.replace('_normal', '_400x400')
+        print(image_url)
         return image_url
     except Exception as e:
         print(e)
