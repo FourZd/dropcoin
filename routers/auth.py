@@ -4,7 +4,7 @@ from configs.auth import tweepy_client
 from configs.db import get_session
 from services.auth import authenticate_user, generate_jwt
 from sqlalchemy.ext.asyncio import AsyncSession
-from schemas.auth import AuthUrlResponse, AuthData, TokenRefreshRequest
+from schemas.auth import AuthUrlResponse, AuthData, TokenRefreshRequest, AuthenticateResponse, RefreshTokenResponse
 from jose import jwt
 import os
 from models.UserModel import User
@@ -29,7 +29,7 @@ async def get_twitter_auth_url():
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to get authorization URL: {str(e)}")
 
-@router.post("/twitter/authenticate")
+@router.post("/twitter/authenticate", response_model=AuthenticateResponse)
 async def twitter_authenticate(auth_data: AuthData, db: AsyncSession = Depends(get_session)):
     """
     Authenticates a user using the received oauth_token and oauth_verifier. 
@@ -42,7 +42,7 @@ async def twitter_authenticate(auth_data: AuthData, db: AsyncSession = Depends(g
         raise HTTPException(status_code=400, detail="Authentication failed or user could not be created.")
     
 
-@router.post("/token/refresh")
+@router.post("/token/refresh", response_model=RefreshTokenResponse)
 async def refresh_token(request: TokenRefreshRequest, db: AsyncSession = Depends(get_session)):
     """
     Accepts a valid refresh token and returns a new access token. Validates the refresh token and checks 
