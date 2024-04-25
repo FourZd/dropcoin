@@ -120,11 +120,14 @@ async def check_twitter_name(user_id, session):
     stmt = select(User).where(User.id == user_id)
     result = await session.execute(stmt)
     user = result.scalars().first()
+    print(user)
     try:
         auth = tweepy_client(access=True, access_token=user.access_token, access_token_secret=user.access_token_secret)
         api = tweepy.API(auth)
         user_info = api.verify_credentials()
+        print(user_info)
         user_name = user_info.name
+        print(user_name)
         return 'Booster' in user_name
     except tweepy.TweepError as e:
         print("Ошибка аутентификации:", e)
@@ -225,13 +228,19 @@ async def fetch_twitter_profile_image_url(user_id, session):
     query = select(User).where(User.id == user_id)
     result = await session.execute(query)
     user = result.scalars().first()
-    
+    print(user)
     try:
+        print(user.access_token, user.access_token_secret)
         auth = tweepy_client(access=True, access_token=user.access_token, access_token_secret=user.access_token_secret)
         api = tweepy.API(auth)
+        print(api)
         user_info = api.verify_credentials()
+        print(user_info)
         image_url = user_info.profile_image_url_https
+        print(image_url)
         image_url = image_url.replace('_normal', '_400x400')
+        print(image_url)
         return image_url
     except Exception as e:
+        print(e)
         return False
