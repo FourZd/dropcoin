@@ -44,15 +44,13 @@ async def game_scheduler():
 
         
 async def calculate_game_time_final(crash_point):
-    initial_time = 2.0  # время от 1x до 1.1x
-    time_decrease_factor = 0.95  # каждый следующий интервал уменьшается на 9%
+    initial_time = 2.0
+    time_decrease_factor = 0.95   
     
-    # Начальное время и коэффициент
     time = 0.0
     multiplier = 1.0
     current_time = initial_time
 
-    # Итерируем пока не достигнем краш-поинта
     while multiplier < crash_point:
         time += current_time
         multiplier += 0.1
@@ -113,3 +111,6 @@ async def update_crash_bets(session: AsyncSession, last_game_hash_id, last_game_
     )
 
     await session.commit()
+
+
+

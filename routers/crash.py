@@ -1,10 +1,11 @@
 
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, WebSocket
 import asyncio
 from datetime import datetime, timedelta, timezone
 from schemas.casino import BetRequest, CashOutRequest, BetResponse, CancelBetResponse, BetResultResponse, LastGameResultResponse, TimingResponse
 from configs.crash import check_and_generate_hashes
-from services.crash import game_scheduler
+from services.crash import game_scheduler, crash_point_from_hash
+from models.CrashHash import CrashHash
 from configs.db import get_session
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
@@ -223,3 +224,47 @@ async def get_game_timing(session: AsyncSession = Depends(get_session)):
         "betting_close_time": state.betting_close_time,
         "next_game_time": state.next_game_time
     }
+
+
+@router.websocket("/ws")
+async def game_websocket(websocket: WebSocket):
+    await websocket.accept()
+    try:
+        while True:
+            gen = get_session()
+            session = await gen.__anext__()
+            state_result = await session.execute(select(CrashState).limit(1))
+            state = state_result.scalars().first()
+            
+            await asyncio.sleep((state.betting_close_time - datetime.now(timezone.utc)).total_seconds())
+            await asyncio.sleep((state.next_game_time - datetime.now(timezone.utc)).total_seconds())
+
+            next_hash_result = await session.execute(
+                select(CrashHash)
+                .where(CrashHash.id < state.current_game_hash_id)
+                .order_by(CrashHash.id.desc())
+                .limit(1)
+            )
+            next_hash = next_hash_result.scalars().first()
+            if not next_hash:
+                await websocket.send_json({"type": "end", "final_ratio": 0})
+                break
+
+            crash_point = crash_point_from_hash(next_hash.hash)
+            multiplier = 1.0
+            current_time = 2.0
+            time_decrease_factor = 0.95
+            
+            # Sending updates at each interval
+            while multiplier < crash_point:
+                multiplier += 0.1
+                current_time *= time_decrease_factor
+                await websocket.send_json({"type": "ratio", "current_ratio": multiplier})
+                await asyncio.sleep(current_time)
+
+            # Send final crash point 
+            await websocket.send_json({"type": "end", "final_ratio": crash_point})
+    except Exception as e:
+        print(f"WebSocket error: {str(e)}")
+    finally:
+        await websocket.close()
