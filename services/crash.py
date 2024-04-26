@@ -89,7 +89,9 @@ def crash_point_from_hash(server_seed):
     h = int(hash_hex[:13], 16)
     e = 2**exponent
     crash_point = (100 * e - h) / (e - h)
-    return crash_point / 100.0
+    crash_point /= 100.0 
+
+    return round(crash_point, 2)
 
 
 async def update_crash_bets(session: AsyncSession, last_game_hash_id, last_game_result):
