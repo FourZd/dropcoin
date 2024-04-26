@@ -16,7 +16,7 @@ from services.auth import get_current_user
 from sqlalchemy.orm import selectinload
 from sqlalchemy import text
 from services.balance import calculate_user_balance
-
+from decimal import Decimal
 
 router = APIRouter(
     prefix="/crash",
@@ -250,20 +250,18 @@ async def game_websocket(websocket: WebSocket):
                 await websocket.send_json({"type": "end", "final_ratio": 0})
                 break
 
-            crash_point = crash_point_from_hash(next_hash.hash)
-            multiplier = 1.0
-            current_time = 2.0
-            time_decrease_factor = 0.95
+            crash_point = Decimal(crash_point_from_hash(next_hash.hash))
+            multiplier = Decimal('1.0')
+            current_time = Decimal('2.0')
+            time_decrease_factor = Decimal('0.95') ** Decimal('0.1')
             
-            # Sending updates at each interval
             while multiplier < crash_point:
-                multiplier += 0.1
+                multiplier += Decimal('0.01')
                 current_time *= time_decrease_factor
-                await websocket.send_json({"type": "ratio", "current_ratio": multiplier})
-                await asyncio.sleep(current_time)
+                await websocket.send_json({"type": "ratio", "current_ratio": float(multiplier)})
+                await asyncio.sleep(float(current_time * Decimal('0.1')))
 
-            # Send final crash point 
-            await websocket.send_json({"type": "end", "final_ratio": crash_point})
+            await websocket.send_json({"type": "end", "final_ratio": float(crash_point)})
     except Exception as e:
         print(f"WebSocket error: {str(e)}")
     finally:

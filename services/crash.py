@@ -10,7 +10,7 @@ from models.CrashState import CrashState
 from models.CrashBet import CrashBet
 from configs.db import get_session
 import hashlib
-
+from decimal import Decimal
 
 async def game_scheduler():
     while True:
@@ -44,20 +44,21 @@ async def game_scheduler():
 
         
 async def calculate_game_time_final(crash_point):
-    initial_time = 2.0
-    time_decrease_factor = 0.95   
-    
-    time = 0.0
-    multiplier = 1.0
+    initial_time = Decimal('2.0')
+    time_decrease_factor = Decimal('0.95') ** Decimal('0.1')  # Настройка коэффициента уменьшения времени
+
+    time = Decimal('0.0')
+    multiplier = Decimal('1.0')
     current_time = initial_time
+
+    crash_point = Decimal(crash_point)  # Убедитесь, что crash_point передается как строка или уже Decimal
 
     while multiplier < crash_point:
         time += current_time
-        multiplier += 0.1
-        # Уменьшаем время следующего интервала по геометрической прогрессии
-        current_time *= time_decrease_factor
+        multiplier += Decimal('0.01')  # Уменьшение шага мультиплаера
+        current_time *= time_decrease_factor  # Уменьшаем время следующего интервала
 
-    return timedelta(seconds=time)
+    return timedelta(seconds=float(time))  # Преобразование в float для timedelta
 
 async def update_crash_state(session, state, finished_game_id, crash_point, next_hash_id):
     game_duration = await calculate_game_time_final(crash_point)
