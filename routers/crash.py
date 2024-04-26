@@ -252,15 +252,26 @@ async def game_websocket(websocket: WebSocket):
 
             crash_point = Decimal(crash_point_from_hash(next_hash.hash))
             multiplier = Decimal('1.0')
-            current_time = Decimal('0.2') 
-            time_decrease_factor = Decimal('0.995')  
+            current_time = Decimal('0.2')
+            time_decrease_factor = Decimal('0.995')
+            last_send_time = 0  # Время последней отправки сообщения
+            accumulated_time = Decimal('0.0')  # Накопленное время до следующей отправки
             
             while multiplier < crash_point:
                 multiplier += Decimal('0.01')
                 current_time *= time_decrease_factor
-                await websocket.send_json({"type": "ratio", "current_ratio": float(multiplier)})
+                accumulated_time += current_time
+
+                # Проверяем, прошло ли достаточно времени с последней отправки
+                if accumulated_time >= Decimal('0.05'):
+                    await websocket.send_json({"type": "ratio", "current_ratio": float(multiplier)})
+                    last_send_time = accumulated_time
+                    accumulated_time = Decimal('0.0')  # Сброс накопленного времени после отправки
+
+                # Задержка на время текущего интервала (не отправляем, если интервал меньше 0.05)
                 await asyncio.sleep(float(current_time))
 
+            # Отправляем финальное значение
             await websocket.send_json({"type": "end", "final_ratio": float(crash_point)})
     except Exception as e:
         print(f"WebSocket error: {str(e)}")
