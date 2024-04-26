@@ -44,21 +44,21 @@ async def game_scheduler():
 
         
 async def calculate_game_time_final(crash_point):
-    initial_time = Decimal('2.0')
-    time_decrease_factor = Decimal('0.95') ** Decimal('0.1')  # Настройка коэффициента уменьшения времени
+    initial_time = Decimal('0.2')
+    time_decrease_factor = Decimal('0.995')  # Настроенный коэффициент
 
     time = Decimal('0.0')
     multiplier = Decimal('1.0')
     current_time = initial_time
 
-    crash_point = Decimal(crash_point)  # Убедитесь, что crash_point передается как строка или уже Decimal
+    crash_point = Decimal(crash_point)
 
     while multiplier < crash_point:
         time += current_time
-        multiplier += Decimal('0.01')  # Уменьшение шага мультиплаера
-        current_time *= time_decrease_factor  # Уменьшаем время следующего интервала
+        multiplier += Decimal('0.01')  # Мелкий шаг мультиплаера
+        current_time *= time_decrease_factor  # Адаптированное уменьшение времени
 
-    return timedelta(seconds=float(time))  # Преобразование в float для timedelta
+    return timedelta(seconds=float(time))
 
 async def update_crash_state(session, state, finished_game_id, crash_point, next_hash_id):
     game_duration = await calculate_game_time_final(crash_point)

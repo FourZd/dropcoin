@@ -252,14 +252,14 @@ async def game_websocket(websocket: WebSocket):
 
             crash_point = Decimal(crash_point_from_hash(next_hash.hash))
             multiplier = Decimal('1.0')
-            current_time = Decimal('2.0')
-            time_decrease_factor = Decimal('0.95') ** Decimal('0.1')
+            current_time = Decimal('0.2') 
+            time_decrease_factor = Decimal('0.995')  
             
             while multiplier < crash_point:
                 multiplier += Decimal('0.01')
                 current_time *= time_decrease_factor
                 await websocket.send_json({"type": "ratio", "current_ratio": float(multiplier)})
-                await asyncio.sleep(float(current_time * Decimal('0.1')))
+                await asyncio.sleep(float(current_time))
 
             await websocket.send_json({"type": "end", "final_ratio": float(crash_point)})
     except Exception as e:
