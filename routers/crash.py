@@ -262,7 +262,7 @@ async def game_websocket(websocket: WebSocket):
                 current_time *= time_decrease_factor
                 accumulated_time += current_time
 
-                if accumulated_time >= Decimal('0.05') and multiplier != last_sent_multiplier:
+                if accumulated_time >= Decimal('0.05') and last_sent_multiplier != multiplier and multiplier < crash_point:
                     await websocket.send_json({"type": "ratio", "current_ratio": float(multiplier)})
                     last_sent_multiplier = multiplier
                     accumulated_time = Decimal('0.0')
