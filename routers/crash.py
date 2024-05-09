@@ -4,7 +4,7 @@ import asyncio
 from datetime import datetime, timedelta, timezone
 from schemas.casino import BetRequest, CashOutRequest, BetResponse, CancelBetResponse, BetResultResponse, LastGameResultResponse, TimingResponse
 from configs.crash import check_and_generate_hashes
-from services.crash import game_scheduler, crash_point_from_hash
+from services.crash import game_scheduler, crash_point_from_hash, calculate_game_time_final
 from models.CrashHash import CrashHash
 from configs.db import get_session
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -227,18 +227,21 @@ async def get_game_timing(session: AsyncSession = Depends(get_session)):
 
 
 @router.websocket("/ws")
-async def game_websocket(websocket: WebSocket):
+async def game_websocket(websocket: WebSocket, session: AsyncSession = Depends(get_session)):
     await websocket.accept()
     try:
         while True:
-            gen = get_session()
-            session = await gen.__anext__()
             state_result = await session.execute(select(CrashState).limit(1))
             state = state_result.scalars().first()
-            
+
+            # Вычисление оставшегося времени до начала ставок и начала игры
             await asyncio.sleep((state.betting_close_time - datetime.now(timezone.utc)).total_seconds())
             await asyncio.sleep((state.next_game_time - datetime.now(timezone.utc)).total_seconds())
 
+            # Отправка сообщения о начале игры
+            await websocket.send_json({"type": "start"})
+
+            # Получение следующего хэша для игры
             next_hash_result = await session.execute(
                 select(CrashHash)
                 .where(CrashHash.id < state.current_game_hash_id)
@@ -251,24 +254,12 @@ async def game_websocket(websocket: WebSocket):
                 break
 
             crash_point = Decimal(crash_point_from_hash(next_hash.hash))
-            multiplier = Decimal('1.0')
-            current_time = Decimal('2.0') / Decimal('10')
-            time_decrease_factor = Decimal('0.995')
-            last_sent_multiplier = Decimal('0.0')  # Для отслеживания последнего отправленного значения
-            accumulated_time = Decimal('0.0')  # Накопление времени для определения момента отправки
-            
-            while multiplier < crash_point:
-                multiplier += Decimal('0.01')
-                current_time *= time_decrease_factor
-                accumulated_time += current_time
 
-                if accumulated_time >= Decimal('0.05') and last_sent_multiplier != multiplier and multiplier < crash_point:
-                    await websocket.send_json({"type": "ratio", "current_ratio": float(multiplier)})
-                    last_sent_multiplier = multiplier
-                    accumulated_time = Decimal('0.0')
+            # Ожидание конца игры с использованием расчета времени
+            game_time = await calculate_game_time_final(crash_point)
+            await asyncio.sleep(game_time.total_seconds())
 
-                await asyncio.sleep(float(current_time))
-
+            # Отправка сообщения о завершении игры с финальным коэффициентом
             await websocket.send_json({"type": "end", "final_ratio": float(crash_point)})
     except Exception as e:
         print(f"WebSocket error: {str(e)}")
