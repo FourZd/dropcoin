@@ -14,28 +14,13 @@ router = APIRouter(
     tags=["auth"]
 )
 
-@router.get("/twitter/auth_url", response_model=AuthUrlResponse)
-async def get_twitter_auth_url():
-    """
-    Generates a Twitter authentication URL which the user is redirected to for authentication.
-    After successful authentication, it redirects to a predefined URL on the server, currently set to 
-    'https://www.booster.trading/farming/auth/twitter/callback' (placeholder, contact backend for changes).
-    """
 
-    auth = tweepy_client()
-    try:
-        redirect_url = auth.get_authorization_url()
-        return AuthUrlResponse(url=redirect_url)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to get authorization URL: {str(e)}")
-
-@router.post("/twitter/authenticate", response_model=AuthenticateResponse)
-async def twitter_authenticate(auth_data: AuthData, db: AsyncSession = Depends(get_session)):
+@router.post("/telegram/authenticate", response_model=AuthenticateResponse)
+async def telegram_authenticate(auth_data: AuthData, db: AsyncSession = Depends(get_session)):
     """
-    Authenticates a user using the received oauth_token and oauth_verifier. 
-    If authentication is successful, it returns JWT access and refresh tokens.
+    Authenticates a user using the Telegram data sent after user authentication in Telegram.
     """
-    response, tokens = await authenticate_user(auth_data.oauth_token, auth_data.oauth_verifier, db)
+    response, tokens = await authenticate_user(auth_data.user_id, db)
     if response:
         return JSONResponse(content={"status": "success", "access_token": tokens[0], "refresh_token": tokens[1]})
     else:

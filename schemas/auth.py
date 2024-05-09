@@ -5,8 +5,7 @@ class AuthUrlResponse(BaseModel):
 
 
 class AuthData(BaseModel):
-    oauth_token: str
-    oauth_verifier: str
+    user_id: str
 
 
 class TokenRefreshRequest(BaseModel):

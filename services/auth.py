@@ -46,21 +46,15 @@ def generate_jwt(user_id: str, token_type: str, expiry_minutes: int):
     return jwt.encode(payload, JWT_SECRET, algorithm="HS256")
 
 
-async def authenticate_user(oauth_token, oauth_verifier, db):
-    auth = tweepy_client()
-    auth.request_token = {'oauth_token': oauth_token, 'oauth_token_secret': oauth_token}
-
+async def authenticate_user(user_id, db):
     try:
-        access, secret = auth.get_access_token(oauth_verifier)
-        api = tweepy.API(auth)
-        user_info = api.verify_credentials()
-        user, created = await insert_or_get_user(user_info.id_str, user_info.screen_name, db, access, secret)
+        user, created = await insert_or_get_user(user_id, db)
         if user or created:
-            access_token = generate_jwt(user_info.id_str, "access", 15)  # Valid for 15 minutes
-            refresh_token = generate_jwt(user_info.id_str, "refresh", 43200)  # Valid for 30 days
+            access_token = generate_jwt(user_id, "access", 15)  # Valid for 15 minutes
+            refresh_token = generate_jwt(user_id, "refresh", 43200)  # Valid for 30 days
             return True, (access_token, refresh_token)
         else:
             return False, None
-    except tweepy.TweepyException as e:
+    except Exception as e:
         print(e)
         return False, None
