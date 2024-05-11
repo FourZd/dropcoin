@@ -5,7 +5,7 @@ from models.CrashBet import CrashBet
 from sqlalchemy.future import select
 from sqlalchemy import func, case
 
-async def calculate_user_balance(user_id: str, session: AsyncSession) -> float:
+async def calculate_user_balance(user_id: int, session: AsyncSession) -> float:
     # Query to calculate the sum of reward points for the user
     rewards_query = (
         select(func.sum(AvailableReward.reward))

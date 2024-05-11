@@ -36,8 +36,12 @@ async def check_mission(mission_reward: int, user: User, session: AsyncSession, 
             session.add(new_post)
             await session.commit()
     elif mission_reward == 5:
-        """Booster in X name"""
-        result = await check_twitter_name(user.id, session)
+        """Twitter post"""
+        result = await check_twitter_url(additional_parameter)
+        if result:
+            new_post = TwitterPost(user_id=user.id, created_at=datetime.now(timezone.utc), post_type="post", post_url=additional_parameter)
+            session.add(new_post)
+            await session.commit()
     elif mission_reward == 6:
         """Twitter post"""
         result = await check_twitter_url(additional_parameter)
@@ -46,33 +50,18 @@ async def check_mission(mission_reward: int, user: User, session: AsyncSession, 
             session.add(new_post)
             await session.commit()
     elif mission_reward == 7:
-        """Twitter post"""
-        result = await check_twitter_url(additional_parameter)
-        if result:
-            new_post = TwitterPost(user_id=user.id, created_at=datetime.now(timezone.utc), post_type="post", post_url=additional_parameter)
-            session.add(new_post)
-            await session.commit()
-    elif mission_reward == 8:
-        """PFP booster logo""" # Maybe there's some type of hash
-        result = await check_twitter_pfp(user.id, session)
-    elif mission_reward == 9:
         """Follow @Booster_Sol"""
-        asyncio.sleep(3)
+        await asyncio.sleep(3)
         result = True
-        #result = await check_user_following(user.id, "@Booster_Sol")
-    elif mission_reward == 10:
+    elif mission_reward == 8:
         """Follow @DanielKetov"""
-        asyncio.sleep(3)
+        await asyncio.sleep(3)
         result = True
-        #result = await check_user_following(user.id, "@DanielKetov")
-    elif mission_reward == 11:
+    elif mission_reward == 9:
         """Tg group"""
-        result = await check_telegram_username(additional_parameter)
-        if result:
-            user.telegram = additional_parameter
-            session.add(user)
-            await session.commit()
-    elif mission_reward == 12:
+        await asyncio.sleep(3)
+        result = True
+    elif mission_reward == 10:
         """Play crash"""
         result = await check_user_bet(user.id, session)
     else:

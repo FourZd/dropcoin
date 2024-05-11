@@ -4,6 +4,8 @@ from routers.crash import router as casino_router
 from routers.rewards import router as rewards_router
 from routers.user_settings import router as settings_router
 from routers.balance import router as balance_router
+import hashlib
+import hmac
 
 app = FastAPI(
     title="Booster API",
@@ -25,8 +27,24 @@ app = FastAPI(
     version="1.0.0"
 )
 
+
 app.include_router(auth_router)
 app.include_router(casino_router)
 app.include_router(rewards_router)
 app.include_router(settings_router)
 app.include_router(balance_router)
+
+@app.on_event("startup")
+async def generate_telegram_auth_hash():
+    data = {
+        "id": 123456789,
+        "first_name": "John",
+        "last_name": "Doe",
+        "username": "johndoe",
+        "photo_url": "http://example.com/photo.jpg",
+        "auth_date": 1609459200
+    }
+    secret_key = '6423D56FEB97AE1B27D55AB43D124'
+    check_string = '\n'.join([f"{key}={value}" for key, value in sorted(data.items()) if key != 'hash'])
+    hash = hmac.new(secret_key.encode(), check_string.encode(), hashlib.sha256).hexdigest()
+    print("Test hash for testing is:", hash)

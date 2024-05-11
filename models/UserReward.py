@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, ForeignKey, DateTime, Float, String
+from sqlalchemy import Column, Integer, ForeignKey, DateTime, Float, String, BigInteger
 from sqlalchemy.orm import relationship
 from models.BaseModel import EntityMeta
 
@@ -6,7 +6,7 @@ class UserReward(EntityMeta):
     __tablename__ = "user_rewards"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    user_id = Column(String, ForeignKey('users.id'))
+    user_id = Column(BigInteger, ForeignKey('users.id'))
     reward_type_id = Column(Integer, ForeignKey('available_rewards.id')) # TODO make Enum? 
     timestamp = Column(DateTime(timezone=True))
 

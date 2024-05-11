@@ -25,7 +25,7 @@ def upgrade():
     )
     op.create_table('crash_bets',
     sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
-    sa.Column('user_id', sa.String(), nullable=True),
+    sa.Column('user_id', sa.BigInteger(), nullable=True),
     sa.Column('amount', sa.Float(), nullable=True),
     sa.Column('time', sa.DateTime(timezone=True), nullable=True),
     sa.Column('game_hash', sa.String(), nullable=True),

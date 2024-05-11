@@ -61,7 +61,7 @@ async def update_referrer(payload: PutReferrerRequest, user: User = Depends(get_
     session.add(referrer_reward)
 
     if referrer.referrer:
-        grand_referrer_reward = UserReward(user_id=referrer.referrer.id, reward_type_id=13)
+        grand_referrer_reward = UserReward(user_id=referrer.referrer.id, reward_type_id=11)
         session.add(grand_referrer_reward)
 
     await session.commit()

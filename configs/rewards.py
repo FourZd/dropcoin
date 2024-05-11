@@ -34,11 +34,6 @@ async def create_default_items():
                 description="Retweet"
             ),
             AvailableReward(
-                title="Add 'Booster' to your name",
-                reward=750,
-                description="Add 'Booster' to your X name"
-            ),
-            AvailableReward(
                 title="Share the hard routine of Booster farmer...",
                 reward=100,
                 description="It's time to tell how your day went"
@@ -47,11 +42,6 @@ async def create_default_items():
                 title="It's time to tell that the clock is ticking...",
                 reward=100,
                 description="Time's almost up, grab your points"
-            ),
-            AvailableReward(
-                title="Change your PFP to Booster logo",
-                reward=750,
-                description="Join the army | Download logo:"
             ),
             AvailableReward(
                 title="Follow @Booster_Sol",

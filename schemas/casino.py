@@ -10,7 +10,7 @@ class CashOutRequest(BaseModel):
     multiplier: float
 
 class Bet(BaseModel):
-    user_id: str
+    user_id: int
     amount: Decimal
     time: datetime
     game_id: int
