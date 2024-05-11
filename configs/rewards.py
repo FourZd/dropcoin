@@ -18,11 +18,6 @@ async def create_default_items():
                 description="Enter Sol wallet where you'd like to receive tokens (not a CEX wallet)"
             ),
             AvailableReward(
-                title="May we know who referred you?",
-                reward=50,
-                description="Provide the @username of your referrer"
-            ),
-            AvailableReward(
                 title="Invite friends",
                 reward=50,
                 description="Earn airdrop points for everyone who mentions your username in 'Who Referred You?' field."

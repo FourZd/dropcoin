@@ -27,14 +27,14 @@ def upgrade():
     )
     op.create_table('user_rewards',
     sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
-    sa.Column('user_id', sa.BigInteger(), nullable=True),
+    sa.Column('user_id', sa.String(), nullable=True),
     sa.Column('reward_type_id', sa.Integer(), nullable=True),
     sa.Column('timestamp', sa.DateTime(timezone=True), nullable=True),
     sa.ForeignKeyConstraint(['reward_type_id'], ['available_rewards.id'], ),
     sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
-    op.add_column('users', sa.Column('referrer_id', sa.BigInteger(), nullable=True))
+    op.add_column('users', sa.Column('referrer_id', sa.String(), nullable=True))
     op.create_foreign_key(None, 'users', 'users', ['referrer_id'], ['id'])
     # ### end Alembic commands ###
 

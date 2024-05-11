@@ -6,7 +6,7 @@ class CrashBet(EntityMeta):
     __tablename__ = "crash_bets"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    user_id = Column(BigInteger, ForeignKey('users.id'))
+    user_id = Column(String, ForeignKey('users.id'))
     amount = Column(Float)
     time = Column(DateTime(timezone=True))
     game_id = Column(Integer, ForeignKey('crash_hashes.id'))

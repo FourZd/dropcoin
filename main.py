@@ -37,7 +37,7 @@ app.include_router(balance_router)
 @app.on_event("startup")
 async def generate_telegram_auth_hash():
     data = {
-        "id": 123456789,
+        "id": '123456789',
         "first_name": "John",
         "last_name": "Doe",
         "username": "johndoe",

@@ -3,8 +3,7 @@ from fastapi import APIRouter, HTTPException, Depends, WebSocket
 import asyncio
 from datetime import datetime, timedelta, timezone
 from schemas.casino import BetRequest, CashOutRequest, BetResponse, CancelBetResponse, BetResultResponse, LastGameResultResponse, TimingResponse
-from configs.crash import check_and_generate_hashes
-from services.crash import game_scheduler, crash_point_from_hash, calculate_game_time_final
+from services.crash import calculate_game_time_final, listen_for_game
 from models.CrashHash import CrashHash
 from configs.db import get_session
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -31,8 +30,7 @@ bets = []
 
 @router.on_event("startup")
 async def start_scheduler():
-    await check_and_generate_hashes()
-    asyncio.create_task(game_scheduler())
+    asyncio.create_task(listen_for_game())
 
 
 @router.post("/place_bet", response_model=BetResponse)
@@ -204,8 +202,7 @@ async def get_last_game_result(session: AsyncSession = Depends(get_session)):
     return {
         "result": state.last_game_result,
         "hash": state.last_game_hash.hash,
-        "betting_close_time": state.betting_close_time,
-        "next_game_time": state.next_game_time
+        "betting_close_time": state.betting_close_time
     }
 
 @router.get("/game_timing", response_model=TimingResponse)
@@ -222,7 +219,6 @@ async def get_game_timing(session: AsyncSession = Depends(get_session)):
     return {
         "current_time": datetime.now(timezone.utc),
         "betting_close_time": state.betting_close_time,
-        "next_game_time": state.next_game_time
     }
 
 

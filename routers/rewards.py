@@ -23,13 +23,14 @@ async def get_list_of_missions(user: User = Depends(get_current_user), session: 
     Each mission has an id, title, reward, and description. 
     Use it for mission status tracking and to differentiate between missions.
     """
-    # Создаем запрос, который объединяет таблицы и проверяет статус для текущего пользователя
+    exclude_ids = [2, 10]
     stmt = (
         select(AvailableReward, UserReward.user_id.isnot(None).label('mission_completed'))
         .outerjoin(
             UserReward,
             (UserReward.reward_type_id == AvailableReward.id) & (UserReward.user_id == user.id)
         )
+        .filter(AvailableReward.id.notin_(exclude_ids))
         .order_by(AvailableReward.id)  # Сортировать по ID награды, если необходимо
     )
     results = await session.execute(stmt)
@@ -59,8 +60,8 @@ async def collect_points(payload: CollectPointsRequest, user: User = Depends(get
     """
     mission_id = payload.mission_id
     additional_parameter = payload.additional_parameter
-    if mission_id == 3:
-        direct_referrals = user.referrals  # Первый уровень рефералов
+    if mission_id == 2:
+        direct_referrals = user.referrals
         direct_referral_count = len(direct_referrals)
         
         second_level_referral_count = sum(len(referral.referrals) for referral in direct_referrals)

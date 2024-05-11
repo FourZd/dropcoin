@@ -4,42 +4,20 @@ import asyncio
 from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
-from sqlalchemy import update, or_
+from sqlalchemy import update, or_, case, cast
 from models.CrashHash import CrashHash
 from models.CrashState import CrashState
 from models.CrashBet import CrashBet
+from models.UserTransaction import UserTransaction
 from configs.db import get_session
 import hashlib
 from decimal import Decimal
+from sqlalchemy.dialects.postgresql import ENUM
 
 async def game_scheduler():
-    while True:
-        gen = get_session()
-        session = await gen.__anext__()
-        state_result = await session.execute(select(CrashState).limit(1))
-        state = state_result.scalars().first()
 
-        await asyncio.sleep((state.betting_close_time - datetime.now(timezone.utc)).total_seconds())
-        await asyncio.sleep((state.next_game_time - datetime.now(timezone.utc)).total_seconds())
-
-        next_hash_result = await session.execute(
-                select(CrashHash)
-                .where(CrashHash.id < state.current_game_hash_id)
-                .order_by(CrashHash.id.desc())
-                .limit(1)
-            )
-        next_hash = next_hash_result.scalars().first()
-        if not next_hash:
-            print("No available hashes in the database. Please regenerate hashes.")
-            break
-
-        crash_point = crash_point_from_hash(next_hash.hash)
-        
-
-        finished_game_id = state.current_game_hash_id
-
-        await update_crash_state(session, state, finished_game_id, crash_point, next_hash_id=next_hash.id)
-        await update_crash_bets(session=session, last_game_hash_id=finished_game_id, last_game_result=crash_point)
+    await update_crash_state(session, state, finished_game_id, crash_point, next_hash_id=next_hash.id)
+    await update_crash_bets(session=session, last_game_hash_id=finished_game_id, last_game_result=crash_point)
         
 
         
@@ -71,49 +49,41 @@ async def update_crash_state(session, state, finished_game_id, crash_point, next
 
     await session.commit()
 
-def crash_point_from_hash(server_seed):
-    salt = "0xd2867566759e9158bda9bf93b343bbd9aa02ce1e0c5bc2b37a2d70d391b04f14"
-    hash_object = hashlib.sha256((server_seed + salt).encode())
-    hash_hex = hash_object.hexdigest()
-
-    # Расчет коэффициента краша по хэшу
-    divisor = 100 // 4
-    val = 0
-    for i in range(0, len(hash_hex), 4):
-        val = (val * 65536 + int(hash_hex[i:i + 4], 16)) % divisor
-
-    if val == 0:
-        return 1.0
-
-    exponent = 52
-    h = int(hash_hex[:13], 16)
-    e = 2**exponent
-    crash_point = (100 * e - h) / (e - h)
-    crash_point /= 100.0 
-
-    return round(crash_point, 2)
-
 
 async def update_crash_bets(session: AsyncSession, last_game_hash_id, last_game_result):
     await session.execute(
         update(CrashBet)
-        .where(CrashBet.game_id == last_game_hash_id, CrashBet.cash_out_multiplier < last_game_result)
-        .values(result='win')
+        .where(CrashBet.game_id == last_game_hash_id)
+        .values(result=case(
+            (CrashBet.cash_out_multiplier < last_game_result, cast('win', ENUM('win', 'lose', name='result_types'))),
+            (or_(CrashBet.cash_out_multiplier > last_game_result, CrashBet.cash_out_multiplier.is_(None)), cast('lose', ENUM('win', 'lose', name='result_types'))),
+            else_=cast('lose', ENUM('win', 'lose', name='result_types'))
+        ))
     )
 
-    await session.execute(
-        update(CrashBet)
-        .where(
-            CrashBet.game_id == last_game_hash_id,
-            or_(
-                CrashBet.cash_out_multiplier > last_game_result,
-                CrashBet.cash_out_multiplier.is_(None)  # This handles the case where cash_out_multiplier is null
-            )
+    # Подтверждение изменений
+    await session.commit()
+
+    # Выборка обновленных ставок и создание записей транзакций
+    bets = await session.execute(
+        select(CrashBet)
+        .where(CrashBet.game_id == last_game_hash_id)
+    )
+    bets = bets.scalars().all()
+
+    # Подготовка и добавление транзакций
+    transactions = [
+        UserTransaction(
+            user_id=bet.user_id,
+            profit=(bet.cash_out_multiplier * bet.amount if bet.result == 'win' else -bet.amount),
+            timestamp=datetime.now()
         )
-        .values(result='lose')
-    )
+        for bet in bets
+    ]
+    session.add_all(transactions)
 
+    # Фиксация транзакций в базе данных
     await session.commit()
 
 
-
+async def listen_for_game() #TODO RabbitMQ singletone listener

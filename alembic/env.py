@@ -14,6 +14,9 @@ from models.CrashState import CrashState
 from models.UserReward import UserReward
 from models.AvailableRewards import AvailableReward
 from models.TwitterPost import TwitterPost
+from models.UserTransaction import UserTransaction
+from models.Farming import Farming
+
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config
