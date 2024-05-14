@@ -14,8 +14,7 @@ COPY pyproject.toml poetry.lock /app/
 RUN poetry config virtualenvs.create false \
     && poetry config installer.max-workers 10 \
     && poetry install --no-interaction --no-ansi
-
+RUN poetry show --tree
 COPY . /app
-
 
 CMD poetry run alembic upgrade head && poetry run uvicorn main:app --host 0.0.0.0 --port 8000 --workers 4

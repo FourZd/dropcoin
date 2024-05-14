@@ -6,7 +6,7 @@ from routers.user_settings import router as settings_router
 from routers.balance import router as balance_router
 import hashlib
 import hmac
-
+from services.crash import listen_for_game
 app = FastAPI(
     title="Booster API",
     description="""
@@ -48,3 +48,9 @@ async def generate_telegram_auth_hash():
     check_string = '\n'.join([f"{key}={value}" for key, value in sorted(data.items()) if key != 'hash'])
     hash = hmac.new(secret_key.encode(), check_string.encode(), hashlib.sha256).hexdigest()
     print("Test hash for testing is:", hash)
+
+
+@app.on_event("startup")
+async def on_startup():
+    print("Server is running")
+    await listen_for_game()

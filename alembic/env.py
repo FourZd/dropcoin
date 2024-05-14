@@ -9,7 +9,6 @@ from configs.environment import get_environment_variables
 from models.BaseModel import EntityMeta
 from models.UserModel import User
 from models.CrashBet import CrashBet
-from models.CrashHash import CrashHash
 from models.CrashState import CrashState
 from models.UserReward import UserReward
 from models.AvailableRewards import AvailableReward

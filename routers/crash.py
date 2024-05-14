@@ -4,7 +4,6 @@ import asyncio
 from datetime import datetime, timedelta, timezone
 from schemas.casino import BetRequest, CashOutRequest, BetResponse, CancelBetResponse, BetResultResponse, LastGameResultResponse, TimingResponse
 from services.crash import calculate_game_time_final, listen_for_game
-from models.CrashHash import CrashHash
 from configs.db import get_session
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
@@ -230,33 +229,15 @@ async def game_websocket(websocket: WebSocket, session: AsyncSession = Depends(g
             state_result = await session.execute(select(CrashState).limit(1))
             state = state_result.scalars().first()
 
-            # Вычисление оставшегося времени до начала ставок и начала игры
-            await asyncio.sleep((state.betting_close_time - datetime.now(timezone.utc)).total_seconds())
-            await asyncio.sleep((state.next_game_time - datetime.now(timezone.utc)).total_seconds())
+            # TODO найти способ определять "начало" игры с помощью микросервиса
 
             # Отправка сообщения о начале игры
             await websocket.send_json({"type": "start"})
 
-            # Получение следующего хэша для игры
-            next_hash_result = await session.execute(
-                select(CrashHash)
-                .where(CrashHash.id < state.current_game_hash_id)
-                .order_by(CrashHash.id.desc())
-                .limit(1)
-            )
-            next_hash = next_hash_result.scalars().first()
-            if not next_hash:
-                await websocket.send_json({"type": "end", "final_ratio": 0})
-                break
-
-            crash_point = Decimal(crash_point_from_hash(next_hash.hash))
-
-            # Ожидание конца игры с использованием расчета времени
-            game_time = await calculate_game_time_final(crash_point)
-            await asyncio.sleep(game_time.total_seconds())
+            # TODO найти способ определять "конец" игры с помощью микросервиса
 
             # Отправка сообщения о завершении игры с финальным коэффициентом
-            await websocket.send_json({"type": "end", "final_ratio": float(crash_point)})
+            await websocket.send_json({"type": "end", "final_ratio": Decimal(state.crash_point)})
     except Exception as e:
         print(f"WebSocket error: {str(e)}")
     finally:
