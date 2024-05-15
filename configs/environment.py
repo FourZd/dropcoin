@@ -19,6 +19,8 @@ class EnvironmentSettings(BaseSettings):
     DATABASE_USERNAME: str
     DEBUG_MODE: bool
     JWT_SECRET: str
+    RABBITMQ_HOST: str
+    RABBITMQ_PORT: int
 
     class Config:
         env_file = get_env_filename()

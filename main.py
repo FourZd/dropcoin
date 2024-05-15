@@ -7,6 +7,7 @@ from routers.balance import router as balance_router
 import hashlib
 import hmac
 from services.crash import listen_for_game
+import asyncio
 app = FastAPI(
     title="Booster API",
     description="""
@@ -51,6 +52,5 @@ async def generate_telegram_auth_hash():
 
 
 @app.on_event("startup")
-async def on_startup():
-    print("Server is running")
-    await listen_for_game()
+async def start_scheduler():
+    asyncio.create_task(listen_for_game())

@@ -3,7 +3,6 @@ from fastapi import APIRouter, HTTPException, Depends, WebSocket
 import asyncio
 from datetime import datetime, timedelta, timezone
 from schemas.casino import BetRequest, CashOutRequest, BetResponse, CancelBetResponse, BetResultResponse, LastGameResultResponse, TimingResponse
-from services.crash import calculate_game_time_final, listen_for_game
 from configs.db import get_session
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
@@ -25,11 +24,6 @@ next_game_time = datetime.now(timezone.utc) + timedelta(seconds=10)
 
 # Список ставок, где каждая ставка - это словарь
 bets = []
-
-
-@router.on_event("startup")
-async def start_scheduler():
-    asyncio.create_task(listen_for_game())
 
 
 @router.post("/place_bet", response_model=BetResponse)

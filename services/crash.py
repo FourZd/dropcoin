@@ -14,8 +14,9 @@ from decimal import Decimal
 from sqlalchemy.dialects.postgresql import ENUM
 import aio_pika
 import json
-
-
+from configs.environment import get_environment_variables
+import logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 async def update_game_data(
     session: AsyncSession,
     next_game_time: datetime,
@@ -93,51 +94,83 @@ async def send_to_websocket_clients(publish_channel, message):
         aio_pika.Message(body=json.dumps(message).encode()),
         routing_key='websocket_game_queue'
     )
+    logging.info("Message sent to websocket clients successfully")
     
 async def listen_for_game():
-    # Listen for a game
-    connection = await aio_pika.connect_robust(
-        "amqp://crashrabbit:crashrabbit@localhost/"
-    )
+    env = get_environment_variables()
+    rabbitmq_host = env.RABBITMQ_HOST
+    rabbitmq_port = env.RABBITMQ_PORT
+    connection = await aio_pika.connect_robust(f"amqp://fourzd:1FArjOL1!@{rabbitmq_host}:{rabbitmq_port}/")
+    session_gen = get_session()
     async with connection:
         channel = await connection.channel()
-        publish_channel = await connection.channel()
+        # publish_channel = await connection.channel()
         await channel.set_qos(prefetch_count=1)
-        queue = await channel.declare_queue("crash_point_queue", durable=True)
-
+        queue = await channel.declare_queue("crash_point_queue", durable=True, arguments={'x-max-length': 1})
+        
+        logging.info("waiting for message....")
         async for message in queue:
-            async with message.process():
-                data = json.loads(message.body)
-                print(" [x] Received %r" % data)
+            logging.info("Message received")
+            try:
+                async with message.process():
+                    logging.info("Processing message")
+                    # data = json.loads(message.body)
+                    # logging.info(f"Received data: {data}")
 
-                # Extract crash_point and crash_time from message body
-                crash_point = data["crash_point"]
-                crash_time = datetime.fromisoformat(data["crash_time"])
-                crash_hash = data["crash_hash"]
+                    # crash_point = data["crash_point"]
+                    # crash_time = datetime.fromisoformat(data["crash_time"])
+                    # crash_hash = data["crash_hash"]
 
-                betting_close_time = datetime.now(timezone.utc) + timedelta(seconds=10)
-                session_gen = get_session()
-                session = await session_gen.__anext__()
+                    # betting_close_time = datetime.now(timezone.utc) + timedelta(seconds=10)
+                    
+                    # session = await session_gen.__anext__()
 
-                # get the current game state from the database
-                state = await session.execute(select(CrashState).limit(1))
-                state = state.scalars().first()
-                await update_game_data(
-                    session,
-                    crash_time,
-                    betting_close_time,
-                    crash_hash,
-                    crash_point,
-                    state,
-                )
-                await update_previous_crash_bets(session)
-                # sleep until betting_close_time
-                wait_time = betting_close_time - datetime.now(timezone.utc)
-                await asyncio.sleep(wait_time.total_seconds())
+                    # logging.info("Session started")
+                    # state = await session.execute(select(CrashState).limit(1))
+                    # state = state.scalars().first()
 
-                # Assuming you have a function to send messages to websocket clients
-                await send_to_websocket_clients(publish_channel, {
-                    'event': 'update_game',
-                    'crash_point': crash_point,
-                    'crash_time': crash_time.isoformat(),
-                })
+                    # if not state:
+                    #     logging.info("No existing state found, creating new state")
+                    #     state = CrashState(
+                    #         current_game_hash=crash_hash,
+                    #         current_result=Decimal(0),
+                    #         betting_close_time=betting_close_time,
+                    #         last_game_hash=None,
+                    #         last_game_result=Decimal(0),
+                    #         next_game_time=crash_time,
+                    #     )
+                    #     session.add(state)
+                    #     await session.commit()
+                    #     logging.info("New state committed")
+
+                    # await update_game_data(
+                    #     session,
+                    #     crash_time,
+                    #     betting_close_time,
+                    #     crash_hash,
+                    #     crash_point,
+                    #     state,
+                    # )
+                    # logging.info("Game data updated")
+
+                    # await update_previous_crash_bets(session)
+                    # logging.info("Previous crash bets updated")
+
+                    # wait_time = betting_close_time - datetime.now(timezone.utc)
+                    # await asyncio.sleep(wait_time.total_seconds())
+
+                    # # await send_to_websocket_clients(publish_channel, {
+                    # #     'event': 'update_game',
+                    # #     'crash_point': crash_point,
+                    # #     'crash_time': crash_time.isoformat(),
+                    # # })
+                    # logging.info("Data sent to websocket clients")
+                    # await session.close()
+                logging.info("message closed")
+            
+            except Exception as e:
+                logging.error(f"Error: {e}")
+                # await session.close()
+                raise e
+            logging.info("try closed")
+        logging.info("async for loop closed")

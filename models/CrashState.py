@@ -9,7 +9,7 @@ class CrashState(EntityMeta):
     current_game_hash = Column(String)
     current_result = Column(Numeric)
     betting_close_time = Column(DateTime(timezone=True), nullable=False)
-    last_game_hash = Column(String)
+    last_game_hash = Column(String, nullable=True)
     last_game_result = Column(Numeric)
     next_game_time = Column(DateTime(timezone=True), nullable=False)
     

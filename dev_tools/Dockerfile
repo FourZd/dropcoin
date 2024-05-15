@@ -17,4 +17,4 @@ RUN poetry config virtualenvs.create false \
 RUN poetry show --tree
 COPY . /app
 
-CMD poetry run alembic upgrade head && poetry run uvicorn main:app --host 0.0.0.0 --port 8000 --workers 4
+CMD poetry run alembic upgrade head && poetry run uvicorn main:app --host 0.0.0.0 --port 8000 --workers 1
