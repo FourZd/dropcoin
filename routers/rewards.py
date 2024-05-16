@@ -10,7 +10,7 @@ from models.UserReward import UserReward
 from schemas.rewards import CollectPointsRequest
 from services.rewards import check_mission, check_user_reward
 from datetime import datetime, timezone
-
+from services.transactions import add_reward_and_transaction
 router = APIRouter(
     prefix="/missions",
     tags=["missions"]
@@ -75,9 +75,7 @@ async def collect_points(payload: CollectPointsRequest, user: User = Depends(get
     completed = await check_mission(mission_id, user, session, additional_parameter)
     
     if completed:
-        new_reward = UserReward(user_id=user.id, reward_type_id=mission_id, timestamp=datetime.now(timezone.utc))
-        session.add(new_reward)
-        await session.commit()
+        await add_reward_and_transaction(user.id, mission_id, session)
         return {"detail": "Reward collected successfully", "mission_id": mission_id}
     else:
         raise HTTPException(status_code=400, detail="Mission is not completed or results are not processed yet")

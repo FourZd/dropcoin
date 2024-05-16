@@ -21,6 +21,7 @@ class EnvironmentSettings(BaseSettings):
     JWT_SECRET: str
     RABBITMQ_HOST: str
     RABBITMQ_PORT: int
+    TG_BOT_NAME: str
 
     class Config:
         env_file = get_env_filename()
