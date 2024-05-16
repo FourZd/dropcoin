@@ -7,6 +7,8 @@ from models.Farming import Farming
 from sqlalchemy.future import select
 from models.UserTransaction import UserTransaction
 from datetime import datetime, timedelta, timezone
+from decimal import Decimal
+
 router = APIRouter(
     prefix="/farming",
     tags=["farming"],
@@ -38,8 +40,8 @@ async def get_farming_status(user: User = Depends(get_current_user), session: As
         earned_reward = farming.reward
     else:
         # Расчет пропорциональной части награды, на основе пройденного времени
-        earned_reward = (elapsed_time.total_seconds() /
-                         total_duration.total_seconds()) * farming.reward
+        earned_reward = (Decimal(elapsed_time.total_seconds()) /
+                 Decimal(total_duration.total_seconds())) * farming.reward
 
     return {
         "time_left": time_left if time_left.total_seconds() > 0 else timedelta(seconds=0),
