@@ -4,7 +4,7 @@ from configs.auth import tweepy_client
 from configs.db import get_session
 from services.auth import authenticate_user, generate_jwt, verify_telegram_authentication
 from sqlalchemy.ext.asyncio import AsyncSession
-from schemas.auth import AuthUrlResponse, AuthData, TokenRefreshRequest, AuthenticateResponse, RefreshTokenResponse
+from schemas.auth import AuthUrlResponse, AuthData, TokenRefreshRequest, AuthenticateResponse, RefreshTokenResponse, UserResponse
 from jose import jwt
 import os
 from models.UserModel import User
@@ -64,9 +64,10 @@ async def refresh_token(request: TokenRefreshRequest, db: AsyncSession = Depends
         raise HTTPException(status_code=401, detail="Invalid refresh token")
     
 
-@router.get("/me", response_model=User)
+@router.get("/me", response_model=UserResponse)
 async def get_me(user: User = Depends(get_current_user)):
     """
     Returns the user object of the authenticated user.
     """
-    return user
+    response_model = UserResponse(id=user.id, username=user.username, wallet_address=user.wallet_address, referrals=user.referrals)
+    return response_model

@@ -13,12 +13,17 @@ from services.auth import get_current_user
 from sqlalchemy.orm import selectinload
 from sqlalchemy import text
 from services.balance import calculate_user_balance
+from services.crash import publish_bet_update
 from decimal import Decimal
 import json
 import aio_pika
+
 from configs.environment import get_environment_variables
 
 env = get_environment_variables()
+rabbitmq_host = env.RABBITMQ_HOST
+rabbitmq_port = env.RABBITMQ_PORT
+
 router = APIRouter(
     prefix="/crash",
     tags=["crash"]
@@ -62,7 +67,7 @@ async def place_bet(bet_request: BetRequest, user: User = Depends(get_current_us
     )
     session.add(new_bet)
     await session.commit()
-
+    await publish_bet_update(f"User: {user.username}, placed a bet of: {bet_request.amount}")
     return {"detail": "Bet placed successfully", "bet": new_bet}
 
 
@@ -123,7 +128,7 @@ async def cash_out(cash_out_request: CashOutRequest, user: User = Depends(get_cu
     bet.cash_out_multiplier = cash_out_request.multiplier
     bet.cash_out_datetime = datetime.now(timezone.utc)
     await session.commit()
-
+    await publish_bet_update(f"User: {user.username}, cashed out at: {cash_out_request.multiplier}")
     return {"detail": "Cash out registered", "bet": bet}
 
 
@@ -250,3 +255,23 @@ async def game_websocket(websocket: WebSocket):
 
                 # Отправляем сообщение о завершении игры с финальным коэффициентом.
                 await websocket.send_json({"type": "end", "final_ratio": str(crash_point)})
+
+
+@router.websocket("/listen-for-bets")
+async def websocket_endpoint(websocket: WebSocket):
+    await websocket.accept()
+    async with aio_pika.connect_robust(f"amqp://fourzd:1FArjOL1!@{rabbitmq_host}:{rabbitmq_port}/") as connection:
+        channel = await connection.channel()  # Open a channel
+        # Declare exchange
+        exchange = await channel.declare_exchange('game_bets', "fanout", durable=True)
+        # Ensure the queue is declared and bind to the exchange
+        queue = await channel.declare_queue('', exclusive=True)  # exclusive queue
+        await queue.bind(exchange)
+        
+        # Consume messages
+        async for message in queue:
+            async with message.process():
+                # Send message data to WebSocket client
+                await websocket.send_text(message.body.decode())
+                if websocket.client_state == WebSocket.DISCONNECTED:
+                    break

@@ -17,6 +17,10 @@ import json
 from configs.environment import get_environment_variables
 import logging
 
+env = get_environment_variables()
+rabbitmq_host = env.RABBITMQ_HOST
+rabbitmq_port = env.RABBITMQ_PORT
+
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
 )
@@ -204,3 +208,16 @@ async def listen_for_game():
                 await session.close()
                 raise e
             logging.info("try closed")
+
+
+async def publish_bet_update(bet_info):
+    connection = await aio_pika.connect_robust(
+        f"amqp://fourzd:1FArjOL1!@{rabbitmq_host}:{rabbitmq_port}/"
+    )
+    channel = await connection.channel()
+    exchange = await channel.declare_exchange('game_bets', "fanout", durable=True)
+    await exchange.publish(
+        aio_pika.Message(body=bet_info.encode()),
+        routing_key=''  
+    )
+    await connection.close()

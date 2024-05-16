@@ -21,3 +21,9 @@ class AuthenticateResponse(BaseModel):
 
 class RefreshTokenResponse(BaseModel):
     access_token: str
+
+class UserResponse(BaseModel):
+    id: str
+    username: str
+    wallet_address: str
+    referrals: list[str]
