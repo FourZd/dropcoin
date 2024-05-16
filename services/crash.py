@@ -84,7 +84,7 @@ async def update_previous_crash_bets(session: AsyncSession):
         UserTransaction(
             user_id=bet.user_id,
             profit=(
-                bet.cash_out_multiplier * bet.amount
+                (bet.cash_out_multiplier - 1) * bet.amount  # Вычитаем 1, чтобы учесть основную ставку
                 if bet.result == "win"
                 else -bet.amount
             ),
