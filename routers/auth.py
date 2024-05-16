@@ -9,6 +9,7 @@ from jose import jwt
 import os
 from models.UserModel import User
 import json
+from services.auth import get_current_user
 
 router = APIRouter(
     prefix="/auth",
@@ -61,3 +62,11 @@ async def refresh_token(request: TokenRefreshRequest, db: AsyncSession = Depends
         raise HTTPException(status_code=401, detail="Refresh token expired")
     except Exception as e:
         raise HTTPException(status_code=401, detail="Invalid refresh token")
+    
+
+@router.get("/me", response_model=User)
+async def get_me(user: User = Depends(get_current_user)):
+    """
+    Returns the user object of the authenticated user.
+    """
+    return user
