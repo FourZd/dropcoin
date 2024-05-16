@@ -24,6 +24,6 @@ class RefreshTokenResponse(BaseModel):
 
 class UserResponse(BaseModel):
     id: str
-    username: str
-    wallet_address: str
-    referrals: list[str]
+    username: str | None
+    wallet_address: str | None
+    referrals: list[str] | None
