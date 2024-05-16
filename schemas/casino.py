@@ -13,7 +13,7 @@ class Bet(BaseModel):
     user_id: str
     amount: Decimal
     time: datetime
-    game_id: int
+    hash: str
 
     
 class BetResponse(BaseModel):
