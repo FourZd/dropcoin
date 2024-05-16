@@ -1,6 +1,8 @@
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from .entities import EntityMeta, User, AvailableReward
+from models.UserModel import User
+from models.AvailableRewards import AvailableReward
+from models.BaseModel import EntityMeta
 from datetime import datetime, timezone
 from models.UserReward import UserReward
 from models.UserTransaction import UserTransaction
