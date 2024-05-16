@@ -4,6 +4,7 @@ from routers.crash import router as casino_router
 from routers.rewards import router as rewards_router
 from routers.user_settings import router as settings_router
 from routers.balance import router as balance_router
+from routers.farming import router as farming_router
 import hashlib
 import hmac
 from services.crash import listen_for_game
@@ -34,7 +35,7 @@ app.include_router(casino_router)
 app.include_router(rewards_router)
 app.include_router(settings_router)
 app.include_router(balance_router)
-
+app.include_router(farming_router)
 @app.on_event("startup")
 async def generate_telegram_auth_hash():
     data = {
