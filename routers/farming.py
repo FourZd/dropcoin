@@ -101,12 +101,12 @@ async def collect_reward(user: User = Depends(get_current_user), session: AsyncS
         ),
         UserTransaction(
             user_id=user.referrer_id,
-            profit=farming.reward * 0.10,
+            profit=farming.reward * Decimal('0.10'),
             timestamp=datetime.now(timezone.utc)
         ),
         UserTransaction(
             user_id=user.referrer.referrer_id,
-            profit=farming.reward * 0.025,
+            profit=farming.reward * Decimal('0.025'),
             timestamp=datetime.now(timezone.utc)
         )
     ]
