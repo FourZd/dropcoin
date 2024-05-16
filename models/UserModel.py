@@ -7,7 +7,7 @@ class User(EntityMeta):
     __tablename__ = "users"
 
     id = Column(String, primary_key=True, index=True)
-    username = Column(String, unique=True, index=True)
+    username = Column(String, unique=True, index=True, nullable=True)
     created_at = Column(DateTime(timezone=True))
     referrer_id = Column(String, ForeignKey('users.id'))
     wallet_address = Column(String)

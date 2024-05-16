@@ -22,14 +22,13 @@ async def telegram_authenticate(auth_data: AuthData, db: AsyncSession = Depends(
     Authenticates a user using the Telegram data sent after user authentication in Telegram.
     Verifies the hash to ensure the data is from Telegram.
     """
-    verified = await verify_telegram_authentication(auth_data.dict(exclude={'hash'}), auth_data.hash)
+    verified = await verify_telegram_authentication(auth_data.id, auth_data.hash)
     if not verified:
         raise HTTPException(status_code=401, detail="Authentication data is tampered or invalid")
 
     # Предполагаем, что auth_data уже содержит все необходимые данные.
     user_id = auth_data.id
-    username = auth_data.username or "Anonymous"  # Обеспечиваем наличие имени пользователя
-    response, tokens = await authenticate_user(user_id, username, db)
+    response, tokens = await authenticate_user(user_id, db)
     if response:
         return JSONResponse(content={"status": "success", "access_token": tokens[0], "refresh_token": tokens[1]})
     else:

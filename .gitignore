@@ -64,3 +64,10 @@ models/__pycache__/Farming.cpython-311.pyc
 models/__pycache__/UserTransaction.cpython-311.pyc
 alembic/versions/__pycache__/013c7e48912f_create_tx_and_farming.cpython-311.pyc
 alembic/versions/__pycache__/e9299f14f44c_remove_twitter_parameters.cpython-311.pyc
+alembic/versions/__pycache__/4cdc6dc68159_make_usernmae_unnecesary_field.cpython-311.pyc
+alembic/versions/__pycache__/4ef16a09f8fb_update_for_microservices.cpython-311.pyc
+alembic/versions/__pycache__/28da484de0d7_make_usernmae_unnecesary_field.cpython-311.pyc
+alembic/versions/__pycache__/b9f9c728af6f_make_usernmae_unnecesary_field.cpython-311.pyc
+alembic/versions/__pycache__/e7e880f57eff_make_prev_game_nullable.cpython-311.pyc
+alembic/versions/__pycache__/4ef16a09f8fb_update_for_microservices.cpython-311.pyc
+alembic/versions/__pycache__/e7e880f57eff_make_prev_game_nullable.cpython-311.pyc

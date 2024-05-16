@@ -4,7 +4,7 @@ from services.auth import get_current_user
 from configs.db import get_session
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
-from schemas.user_settings import PutWalletRequest, PutReferrerRequest
+from schemas.user_settings import PutWalletRequest, PutReferrerRequest, UpdateUsernameRequest
 from models.UserReward import UserReward
 from sqlalchemy.orm import selectinload
 from configs.environment import get_environment_variables
@@ -16,6 +16,33 @@ router = APIRouter(
     prefix="/user/settings",
     tags=["settings"]
 )
+
+@router.put("/username") 
+async def update_username(payload: UpdateUsernameRequest, user: User = Depends(get_current_user), session: AsyncSession = Depends(get_session)):
+    """
+    Update the username of the user. The username is used to identify the user in the system.
+    """
+    new_username = payload.get("username")
+    if not new_username:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Username is required")
+    if user.username:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Username is already set and cannot be changed")
+    user_query = select(User).where(User.username == new_username)
+    user_result = await session.execute(user_query)
+    existing_user = user_result.scalars().first()
+    if existing_user:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Username already exists")
+    
+    user.username = new_username
+
+    try:
+        await session.commit()
+    except Exception as e:
+        await session.rollback()
+        raise HTTPException(status_code=500, detail=f"An error occured while updating the username")
+    
+    return {"message": "Username updated successfully", "username": user.username}
+
 
 @router.put("/wallet")
 async def update_wallet(payload: PutWalletRequest, user: User = Depends(get_current_user), session: AsyncSession = Depends(get_session)):

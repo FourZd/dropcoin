@@ -5,3 +5,6 @@ class PutWalletRequest(BaseModel):
 
 class PutReferrerRequest(BaseModel):
     encoded_username: str
+
+class UpdateUsernameRequest(BaseModel):
+    username: str

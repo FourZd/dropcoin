@@ -45,11 +45,11 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(a
 
     return user
 
-async def verify_telegram_authentication(data: dict, token: str) -> bool:
+async def verify_telegram_authentication(user_id, token: str) -> bool:
     """
     Verify the hash of the data received from Telegram using the secret token.
     """
-    token_check_string = '\n'.join([f"{key}={value}" for key, value in sorted(data.items()) if key != 'hash'])
+    token_check_string = user_id
     secret_key = get_environment_variables().JWT_SECRET
     expected_hash = hmac_new(secret_key.encode(), token_check_string.encode(), sha256).hexdigest()
     return expected_hash == token
@@ -63,9 +63,9 @@ def generate_jwt(user_id: str, token_type: str, expiry_minutes: int):
     return jwt.encode(payload, JWT_SECRET, algorithm="HS256")
 
 
-async def authenticate_user(user_id: str, username: str, db: AsyncSession):
+async def authenticate_user(user_id: str, db: AsyncSession):
     try:
-        user = await insert_or_get_user(user_id, username, db)
+        user = await insert_or_get_user(user_id, db)
         if user:
             access_token = generate_jwt(user.id, "access", 15)  # Valid for 15 minutes
             refresh_token = generate_jwt(user.id, "refresh", 43200)  # Valid for 30 days
