@@ -3,9 +3,6 @@ from fastapi import APIRouter, HTTPException, Depends, WebSocket
 import asyncio
 from datetime import datetime, timedelta, timezone
 from schemas.casino import BetRequest, CashOutRequest, BetResponse, CancelBetResponse, BetResultResponse, LastGameResultResponse, TimingResponse
-from configs.crash import check_and_generate_hashes
-from services.crash import game_scheduler, crash_point_from_hash, calculate_game_time_final
-from models.CrashHash import CrashHash
 from configs.db import get_session
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
@@ -17,7 +14,11 @@ from sqlalchemy.orm import selectinload
 from sqlalchemy import text
 from services.balance import calculate_user_balance
 from decimal import Decimal
+import json
+import aio_pika
+from configs.environment import get_environment_variables
 
+env = get_environment_variables()
 router = APIRouter(
     prefix="/crash",
     tags=["crash"]
@@ -27,12 +28,6 @@ next_game_time = datetime.now(timezone.utc) + timedelta(seconds=10)
 
 # Список ставок, где каждая ставка - это словарь
 bets = []
-
-
-@router.on_event("startup")
-async def start_scheduler():
-    await check_and_generate_hashes()
-    asyncio.create_task(game_scheduler())
 
 
 @router.post("/place_bet", response_model=BetResponse)
@@ -48,7 +43,7 @@ async def place_bet(bet_request: BetRequest, user: User = Depends(get_current_us
         raise HTTPException(status_code=400, detail="Betting is closed for the current game. Wait for the next game.")
 
     # Check if the user has already placed a bet for the current game
-    existing_bet_result = await session.execute(select(CrashBet).where(CrashBet.user_id == user.id, CrashBet.game_id == state.current_game_hash_id))
+    existing_bet_result = await session.execute(select(CrashBet).where(CrashBet.user_id == user.id, CrashBet.hash == state.current_game_hash))
     existing_bet = existing_bet_result.scalars().first()
 
     if existing_bet:
@@ -63,7 +58,7 @@ async def place_bet(bet_request: BetRequest, user: User = Depends(get_current_us
         user_id=user.id,
         amount=bet_request.amount,
         time=datetime.now(timezone.utc),
-        game_id=state.current_game_hash_id
+        hash=state.current_game_hash
     )
     session.add(new_bet)
     await session.commit()
@@ -87,19 +82,19 @@ async def cancel_bet(user: User = Depends(get_current_user), session: AsyncSessi
     if datetime.now(timezone.utc) >= state.betting_close_time:
         raise HTTPException(status_code=400, detail="Betting has closed; bet cannot be deleted.")
 
-    bet_check_query = text("SELECT 1 FROM crash_bets WHERE user_id = :user_id AND game_id = :game_id")
+    bet_check_query = text("SELECT 1 FROM crash_bets WHERE user_id = :user_id AND hash = :hash")
     bet_check_result = await session.execute(
         bet_check_query,
-        {'user_id': user.id, 'game_id': state.current_game_hash_id}
+        {'user_id': user.id, 'hash': state.current_game_hash}
     )
     bet_exists = bet_check_result.scalar()
 
     # Если ставка существует, то выполняем её удаление
     if bet_exists:
-        delete_query = text("DELETE FROM crash_bets WHERE user_id = :user_id AND game_id = :game_id")
+        delete_query = text("DELETE FROM crash_bets WHERE user_id = :user_id AND hash = :hash")
         await session.execute(
             delete_query,
-            {'user_id': user.id, 'game_id': state.current_game_hash_id}
+            {'user_id': user.id, 'hash': state.current_game_hash}
         )
         await session.commit()
         return {"detail": "Bet deletion successful"}
@@ -117,7 +112,7 @@ async def cash_out(cash_out_request: CashOutRequest, user: User = Depends(get_cu
     state_result = await session.execute(select(CrashState).limit(1))
     state = state_result.scalars().first()
 
-    bet_result = await session.execute(select(CrashBet).where(CrashBet.user_id == user.id, CrashBet.game_id == state.current_game_hash_id))
+    bet_result = await session.execute(select(CrashBet).where(CrashBet.user_id == user.id, CrashBet.hash == state.current_game_hash))
     bet = bet_result.scalars().first()
 
     if bet is None:
@@ -142,7 +137,7 @@ async def cancel_cash_out(user: User = Depends(get_current_user), session: Async
     state = state_result.scalars().first()
 
     # Retrieve the user's current bet for the ongoing game
-    bet_result = await session.execute(select(CrashBet).where(CrashBet.user_id == user.id, CrashBet.game_id == state.current_game_hash_id))
+    bet_result = await session.execute(select(CrashBet).where(CrashBet.user_id == user.id, CrashBet.hash == state.current_game_hash))
     bet = bet_result.scalars().first()
 
     if bet is None:
@@ -172,7 +167,7 @@ async def check_bet_result(user: User = Depends(get_current_user), session: Asyn
     state_result = await session.execute(select(CrashState).limit(1))
     state = state_result.scalars().first()
 
-    bets_result = await session.execute(select(CrashBet).where(CrashBet.user_id == user.id, CrashBet.game_id == state.last_game_hash_id))
+    bets_result = await session.execute(select(CrashBet).where(CrashBet.user_id == user.id, CrashBet.hash == state.last_game_hash))
     user_bets = bets_result.scalars().all()
 
     if not user_bets:
@@ -195,7 +190,7 @@ async def get_last_game_result(session: AsyncSession = Depends(get_session)):
     """
     Check the result of the last game.
     """
-    state_result = await session.execute(select(CrashState).options(selectinload(CrashState.last_game_hash)).limit(1))
+    state_result = await session.execute(select(CrashState).limit(1))
     state = state_result.scalars().first()
     
     if state is None or state.last_game_hash is None:
@@ -203,9 +198,8 @@ async def get_last_game_result(session: AsyncSession = Depends(get_session)):
     
     return {
         "result": state.last_game_result,
-        "hash": state.last_game_hash.hash,
-        "betting_close_time": state.betting_close_time,
-        "next_game_time": state.next_game_time
+        "hash": state.last_game_hash,
+        "betting_close_time": state.betting_close_time
     }
 
 @router.get("/game_timing", response_model=TimingResponse)
@@ -222,46 +216,37 @@ async def get_game_timing(session: AsyncSession = Depends(get_session)):
     return {
         "current_time": datetime.now(timezone.utc),
         "betting_close_time": state.betting_close_time,
-        "next_game_time": state.next_game_time
     }
 
 
 @router.websocket("/ws")
-async def game_websocket(websocket: WebSocket, session: AsyncSession = Depends(get_session)):
+async def game_websocket(websocket: WebSocket):
     await websocket.accept()
-    try:
-        while True:
-            state_result = await session.execute(select(CrashState).limit(1))
-            state = state_result.scalars().first()
+    connection = await aio_pika.connect_robust(f"amqp://fourzd:1FArjOL1!@{env.RABBITMQ_HOST}:{env.RABBITMQ_PORT}/")
+    async with connection:
+        channel = await connection.channel()
+        
+        # Создаем или подключаемся к существующему exchange типа 'fanout'.
+        exchange_name = 'game_updates'
+        await channel.declare_exchange(exchange_name, 'fanout', durable=True)
 
-            # Вычисление оставшегося времени до начала ставок и начала игры
-            await asyncio.sleep((state.betting_close_time - datetime.now(timezone.utc)).total_seconds())
-            await asyncio.sleep((state.next_game_time - datetime.now(timezone.utc)).total_seconds())
+        # Создаем временную эксклюзивную очередь.
+        queue = await channel.declare_queue('', exclusive=True)
+        await queue.bind(exchange_name)
 
-            # Отправка сообщения о начале игры
-            await websocket.send_json({"type": "start"})
+        async for message in queue:
+            async with message.process():
+                data = json.loads(message.body.decode())
+                crash_point = data['crash_point']
+                crash_time = datetime.fromisoformat(data['crash_time'])
 
-            # Получение следующего хэша для игры
-            next_hash_result = await session.execute(
-                select(CrashHash)
-                .where(CrashHash.id < state.current_game_hash_id)
-                .order_by(CrashHash.id.desc())
-                .limit(1)
-            )
-            next_hash = next_hash_result.scalars().first()
-            if not next_hash:
-                await websocket.send_json({"type": "end", "final_ratio": 0})
-                break
+                # Отправляем сообщение о начале игры.
+                await websocket.send_json({"type": "start", "event": data['event']})
 
-            crash_point = Decimal(crash_point_from_hash(next_hash.hash))
+                # Ожидаем до времени 'crash_time'.
+                wait_time = (crash_time - datetime.now(timezone.utc)).total_seconds()
+                if wait_time > 0:
+                    await asyncio.sleep(wait_time)
 
-            # Ожидание конца игры с использованием расчета времени
-            game_time = await calculate_game_time_final(crash_point)
-            await asyncio.sleep(game_time.total_seconds())
-
-            # Отправка сообщения о завершении игры с финальным коэффициентом
-            await websocket.send_json({"type": "end", "final_ratio": float(crash_point)})
-    except Exception as e:
-        print(f"WebSocket error: {str(e)}")
-    finally:
-        await websocket.close()
+                # Отправляем сообщение о завершении игры с финальным коэффициентом.
+                await websocket.send_json({"type": "end", "final_ratio": str(crash_point)})

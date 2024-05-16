@@ -60,3 +60,7 @@ alembic/versions/__pycache__/ba95fec0eda3_alter_twitter_post_id.cpython-311.pyc
 alembic/versions/__pycache__/a78ad2f1de61_add_post_url.cpython-311.pyc
 alembic/versions/__pycache__/f77ed6e25140_save_access_token.cpython-311.pyc
 schemas/__pycache__/balance.cpython-311.pyc
+models/__pycache__/Farming.cpython-311.pyc
+models/__pycache__/UserTransaction.cpython-311.pyc
+alembic/versions/__pycache__/013c7e48912f_create_tx_and_farming.cpython-311.pyc
+alembic/versions/__pycache__/e9299f14f44c_remove_twitter_parameters.cpython-311.pyc

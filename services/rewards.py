@@ -23,16 +23,19 @@ async def check_mission(mission_reward: int, user: User, session: AsyncSession, 
         """Wallet set up"""
         result = await check_if_wallet_connected(user)
 
-    elif mission_reward == 2:
-        """Referrer set up"""
-        result = await check_if_referrer_defined(user)
-
-    elif mission_reward == 4:
+    elif mission_reward == 3:
         """Retweet"""
         # additional_parameter = url
         result = await check_twitter_url(additional_parameter)
         if result:
             new_post = TwitterPost(user_id=user.id, created_at=datetime.now(timezone.utc), post_type="retweet", post_url=additional_parameter)
+            session.add(new_post)
+            await session.commit()
+    elif mission_reward == 4:
+        """Twitter post"""
+        result = await check_twitter_url(additional_parameter)
+        if result:
+            new_post = TwitterPost(user_id=user.id, created_at=datetime.now(timezone.utc), post_type="post", post_url=additional_parameter)
             session.add(new_post)
             await session.commit()
     elif mission_reward == 5:
@@ -43,25 +46,18 @@ async def check_mission(mission_reward: int, user: User, session: AsyncSession, 
             session.add(new_post)
             await session.commit()
     elif mission_reward == 6:
-        """Twitter post"""
-        result = await check_twitter_url(additional_parameter)
-        if result:
-            new_post = TwitterPost(user_id=user.id, created_at=datetime.now(timezone.utc), post_type="post", post_url=additional_parameter)
-            session.add(new_post)
-            await session.commit()
-    elif mission_reward == 7:
         """Follow @Booster_Sol"""
         await asyncio.sleep(3)
         result = True
-    elif mission_reward == 8:
+    elif mission_reward == 7:
         """Follow @DanielKetov"""
         await asyncio.sleep(3)
         result = True
-    elif mission_reward == 9:
+    elif mission_reward == 8:
         """Tg group"""
         await asyncio.sleep(3)
         result = True
-    elif mission_reward == 10:
+    elif mission_reward == 9:
         """Play crash"""
         result = await check_user_bet(user.id, session)
     else:
@@ -82,7 +78,7 @@ async def check_if_referrer_defined(user: User):
         return False
     
 
-async def check_user_reward(session: AsyncSession, user_id: int, mission_id: int) -> bool:
+async def check_user_reward(session: AsyncSession, user_id: str, mission_id: int) -> bool:
     subquery = (
         select(literal_column("1"))
         .where(

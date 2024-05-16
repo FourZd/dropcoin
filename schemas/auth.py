@@ -5,7 +5,7 @@ class AuthUrlResponse(BaseModel):
 
 
 class AuthData(BaseModel):
-    id: int = Field(..., description="The unique identifier for the Telegram user")
+    id: str = Field(..., description="The unique identifier for the Telegram user")
     first_name: str = Field(None, description="The first name of the Telegram user")
     last_name: str = Field(None, description="The last name of the Telegram user")
     username: str = Field(None, description="The Telegram username of the user")

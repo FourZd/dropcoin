@@ -10,10 +10,10 @@ class CashOutRequest(BaseModel):
     multiplier: float
 
 class Bet(BaseModel):
-    user_id: int
+    user_id: str
     amount: Decimal
     time: datetime
-    game_id: int
+    hash: str
 
     
 class BetResponse(BaseModel):
@@ -34,10 +34,8 @@ class LastGameResultResponse(BaseModel):
     result: float
     hash: str
     betting_close_time: datetime
-    next_game_time: datetime
 
 
 class TimingResponse(BaseModel):
     current_time: datetime
     betting_close_time: datetime
-    next_game_time: datetime
