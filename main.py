@@ -38,17 +38,9 @@ app.include_router(balance_router)
 app.include_router(farming_router)
 @app.on_event("startup")
 async def generate_telegram_auth_hash():
-    data = {
-        "id": '123456789',
-        "first_name": "John",
-        "last_name": "Doe",
-        "username": "johndoe",
-        "photo_url": "http://example.com/photo.jpg",
-        "auth_date": 1609459200
-    }
+    id = '13371488'
     secret_key = '6423D56FEB97AE1B27D55AB43D124'
-    check_string = '\n'.join([f"{key}={value}" for key, value in sorted(data.items()) if key != 'hash'])
-    hash = hmac.new(secret_key.encode(), check_string.encode(), hashlib.sha256).hexdigest()
+    hash = hmac.new(secret_key.encode(), id.encode(), hashlib.sha256).hexdigest()
     print("Test hash for testing is:", hash)
 
 
