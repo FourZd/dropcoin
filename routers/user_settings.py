@@ -44,6 +44,24 @@ async def update_username(payload: UpdateUsernameRequest, user: User = Depends(g
     return {"message": "Username updated successfully", "username": user.username}
 
 
+@router.get("/username/check")
+async def check_username_availability(username: str, session: AsyncSession = Depends(get_session)):
+    """
+    Check if a username is available.
+    """
+    if not username:
+        raise HTTPException(status_code=400, detail="Username is required")
+    
+    user_query = select(User).where(User.username == username)
+    user_result = await session.execute(user_query)
+    existing_user = user_result.scalars().first()
+    
+    if existing_user:
+        return {"available": False, "message": "Username already exists"}
+    
+    return {"available": True, "message": "Username is available"}
+
+
 @router.put("/wallet")
 async def update_wallet(payload: PutWalletRequest, user: User = Depends(get_current_user), session: AsyncSession = Depends(get_session)):
     """
