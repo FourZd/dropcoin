@@ -22,7 +22,7 @@ async def update_username(payload: UpdateUsernameRequest, user: User = Depends(g
     """
     Update the username of the user. The username is used to identify the user in the system.
     """
-    new_username = payload.get("username")
+    new_username = payload.username
     if not new_username:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Username is required")
     if user.username:
