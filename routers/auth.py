@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException, Depends
 from fastapi.responses import JSONResponse
 from configs.auth import tweepy_client
 from configs.db import get_session
-from services.auth import authenticate_user, generate_jwt, verify_telegram_authentication
+from services.auth import authenticate_user, generate_jwt, validate
 from sqlalchemy.ext.asyncio import AsyncSession
 from schemas.auth import AuthUrlResponse, TelegramAuthData, TokenRefreshRequest, AuthenticateResponse, RefreshTokenResponse, UserResponse
 from jose import jwt
@@ -10,12 +10,15 @@ import os
 from models.UserModel import User
 import json
 from services.auth import get_current_user
+from configs.environment import get_environment_variables
+from urllib.parse import parse_qs
 
 router = APIRouter(
     prefix="/auth",
     tags=["auth"]
 )
 
+BOT_TOKEN = get_environment_variables().JWT_SECRET
 
 @router.post("/telegram/authenticate", response_model=AuthenticateResponse)
 async def telegram_authenticate(auth_data: TelegramAuthData, db: AsyncSession = Depends(get_session)):
@@ -23,12 +26,15 @@ async def telegram_authenticate(auth_data: TelegramAuthData, db: AsyncSession = 
     Authenticates a user using the Telegram data sent after user authentication in Telegram.
     Verifies the hash to ensure the data is from Telegram.
     """
-    verified = await verify_telegram_authentication(auth_data)
+    data_check_string = auth_data
+    parsed_data = parse_qs(data_check_string)
+    hash_value = parsed_data['hash'][0]
+    verified = validate(hash_value, data_check_string, BOT_TOKEN)
     if not verified:
         raise HTTPException(status_code=401, detail="Authentication data is tampered or invalid")
 
     # Предполагаем, что auth_data уже содержит все необходимые данные.
-    user_id = auth_data.id
+    user_id = parsed_data["user"]["id"]
     print("Trying to get authenticated azaza")
     response, tokens = await authenticate_user(user_id, db)
     if response:

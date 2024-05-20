@@ -1,17 +1,20 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, HttpUrl
 from typing import Optional
 class AuthUrlResponse(BaseModel):
     url: str
 
 
-class TelegramAuthData(BaseModel):
-    id: str
-    first_name: Optional[str]
+class User(BaseModel):
+    id: int
+    first_name: str
     last_name: Optional[str]
     username: Optional[str]
-    photo_url: Optional[str]
-    auth_date: str
-    hash: str
+    language_code: Optional[str]
+    is_premium: Optional[bool]
+    allows_write_to_pm: Optional[bool]
+
+class TelegramAuthData(BaseModel):
+    data_check_string: str
 
 
 class TokenRefreshRequest(BaseModel):

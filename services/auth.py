@@ -12,15 +12,19 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from configs.db import get_session
 from hashlib import sha256
-from hmac import new as hmac_new
-import os 
+import os
 from schemas.auth import TelegramAuthData
-
+import hmac
+import json
+from urllib.parse import unquote
 authorization_scheme = HTTPBearer(auto_error=False)
 JWT_SECRET = get_environment_variables().JWT_SECRET
 
 
-async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(authorization_scheme), session: AsyncSession = Depends(get_session)) -> User:
+async def get_current_user(
+    credentials: HTTPAuthorizationCredentials = Depends(authorization_scheme),
+    session: AsyncSession = Depends(get_session),
+) -> User:
     if credentials is None:
         raise HTTPException(status_code=403, detail="Credentials are required")
 
@@ -34,34 +38,57 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(a
         user_id = payload.get("sub")
         print(user_id)
         if user_id is None:
-            raise HTTPException(status_code=401, detail="Could not validate credentials")
+            raise HTTPException(
+                status_code=401, detail="Could not validate credentials"
+            )
     except Exception as e:
         raise HTTPException(status_code=401, detail=f"Invalid JWT: {str(e)}")
 
-    user_result = await session.execute(select(User).options(selectinload(User.referrer), selectinload(User.referrals)).where(User.id == user_id))
+    user_result = await session.execute(
+        select(User)
+        .options(selectinload(User.referrer), selectinload(User.referrals))
+        .where(User.id == user_id)
+    )
     user = user_result.scalars().first()
     if user is None:
         raise HTTPException(status_code=404, detail="User not found")
 
     return user
 
-async def verify_telegram_authentication(auth_data: TelegramAuthData) -> bool:
+
+def validate(hash_str, init_data, token, c_str="WebAppData"):
     """
-    Verify the hash of the data received from Telegram using the secret token.
+    Validates the data received from the Telegram web app, using the
+    method documented here:
+    https://core.telegram.org/bots/webapps#validating-data-received-via-the-web-app
+
+    hash_str - the has string passed by the webapp
+    init_data - the query string passed by the webapp
+    token - Telegram bot's token
+    c_str - constant string (default = "WebAppData")
     """
-    received_hash = auth_data.hash
-    data_dict = auth_data.dict(exclude={'hash'})
-    token_check_string = '\n'.join([f"{k}={v}" for k, v in sorted(data_dict.items())])
-    secret_key = get_environment_variables().JWT_SECRET
-    
-    expected_hash = hmac_new(secret_key.encode(), token_check_string.encode(), sha256).hexdigest()
-    return expected_hash == received_hash
+
+    init_data = sorted(
+        [
+            chunk.split("=")
+            for chunk in unquote(init_data).split("&")
+            if chunk[: len("hash=")] != "hash="
+        ],
+        key=lambda x: x[0],
+    )
+    init_data = "\n".join([f"{rec[0]}={rec[1]}" for rec in init_data])
+
+    secret_key = hmac.new(c_str.encode(), token.encode(), sha256).digest()
+    data_check = hmac.new(secret_key, init_data.encode(), sha256)
+
+    return data_check.hexdigest() == hash_str
+
 
 def generate_jwt(user_id: str, token_type: str, expiry_minutes: int):
     payload = {
         "sub": user_id,
         "type": token_type,
-        "exp": datetime.now(timezone.utc) + timedelta(minutes=expiry_minutes)
+        "exp": datetime.now(timezone.utc) + timedelta(minutes=expiry_minutes),
     }
     return jwt.encode(payload, JWT_SECRET, algorithm="HS256")
 
