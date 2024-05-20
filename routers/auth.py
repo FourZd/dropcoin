@@ -34,9 +34,11 @@ async def telegram_authenticate(auth_data: TelegramAuthData, db: AsyncSession = 
         raise HTTPException(status_code=401, detail="Authentication data is tampered or invalid")
 
     # Предполагаем, что auth_data уже содержит все необходимые данные.
-    user_id = parsed_data["user"]["id"]
-    print("Trying to get authenticated azaza")
-    response, tokens = await authenticate_user(user_id, db)
+    user_json = parsed_data["user"][0]
+    user_data = json.loads(user_json)
+    user_id = user_data["id"]
+    print(user_id)
+    response, tokens = await authenticate_user(str(user_id), db)
     if response:
         return JSONResponse(content={"status": "success", "access_token": tokens[0], "refresh_token": tokens[1]})
     else:
