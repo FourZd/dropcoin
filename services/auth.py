@@ -14,7 +14,7 @@ from configs.db import get_session
 from hashlib import sha256
 from hmac import new as hmac_new
 import os 
-
+from schemas.auth import TelegramAuthData
 
 authorization_scheme = HTTPBearer(auto_error=False)
 JWT_SECRET = get_environment_variables().JWT_SECRET
@@ -45,14 +45,17 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(a
 
     return user
 
-async def verify_telegram_authentication(user_id, token: str) -> bool:
+async def verify_telegram_authentication(auth_data: TelegramAuthData) -> bool:
     """
     Verify the hash of the data received from Telegram using the secret token.
     """
-    token_check_string = user_id
+    received_hash = auth_data.hash
+    data_dict = auth_data.dict(exclude={'hash'})
+    token_check_string = '\n'.join([f"{k}={v}" for k, v in sorted(data_dict.items())])
     secret_key = get_environment_variables().JWT_SECRET
+    
     expected_hash = hmac_new(secret_key.encode(), token_check_string.encode(), sha256).hexdigest()
-    return expected_hash == token
+    return expected_hash == received_hash
 
 def generate_jwt(user_id: str, token_type: str, expiry_minutes: int):
     payload = {

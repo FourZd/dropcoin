@@ -4,7 +4,7 @@ from configs.auth import tweepy_client
 from configs.db import get_session
 from services.auth import authenticate_user, generate_jwt, verify_telegram_authentication
 from sqlalchemy.ext.asyncio import AsyncSession
-from schemas.auth import AuthUrlResponse, AuthData, TokenRefreshRequest, AuthenticateResponse, RefreshTokenResponse, UserResponse
+from schemas.auth import AuthUrlResponse, TelegramAuthData, TokenRefreshRequest, AuthenticateResponse, RefreshTokenResponse, UserResponse
 from jose import jwt
 import os
 from models.UserModel import User
@@ -18,12 +18,12 @@ router = APIRouter(
 
 
 @router.post("/telegram/authenticate", response_model=AuthenticateResponse)
-async def telegram_authenticate(auth_data: AuthData, db: AsyncSession = Depends(get_session)):
+async def telegram_authenticate(auth_data: TelegramAuthData, db: AsyncSession = Depends(get_session)):
     """
     Authenticates a user using the Telegram data sent after user authentication in Telegram.
     Verifies the hash to ensure the data is from Telegram.
     """
-    verified = await verify_telegram_authentication(auth_data.id, auth_data.hash)
+    verified = await verify_telegram_authentication(auth_data)
     if not verified:
         raise HTTPException(status_code=401, detail="Authentication data is tampered or invalid")
 

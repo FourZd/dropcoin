@@ -1,12 +1,17 @@
-from pydantic import BaseModel, Field
-
+from pydantic import BaseModel, Field, HttpUrl
+from typing import Optional
 class AuthUrlResponse(BaseModel):
     url: str
 
 
-class AuthData(BaseModel):
-    id: str = Field(..., description="The unique identifier for the Telegram user")
-    hash: str = Field(..., description="Hash of the authentication data for verification")
+class TelegramAuthData(BaseModel):
+    id: int
+    first_name: Optional[str]
+    last_name: Optional[str]
+    username: Optional[str]
+    photo_url: Optional[HttpUrl]
+    auth_date: int
+    hash: str
 
 
 class TokenRefreshRequest(BaseModel):
