@@ -42,7 +42,8 @@ app.include_router(farming_router)
 origins = [
     "https://booster-app-54f649d23ab2.herokuapp.com/",
     "https://web.telegram.org",
-    "https://t.me"
+    "https://t.me",
+    "*"
 ]
 
 app.add_middleware(
