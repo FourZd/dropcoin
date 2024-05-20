@@ -29,6 +29,7 @@ async def telegram_authenticate(auth_data: AuthData, db: AsyncSession = Depends(
 
     # Предполагаем, что auth_data уже содержит все необходимые данные.
     user_id = auth_data.id
+    print("Trying to get authenticated azaza")
     response, tokens = await authenticate_user(user_id, db)
     if response:
         return JSONResponse(content={"status": "success", "access_token": tokens[0], "refresh_token": tokens[1]})
