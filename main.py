@@ -9,6 +9,8 @@ import hashlib
 import hmac
 from services.crash import listen_for_game
 import asyncio
+from fastapi.middleware.cors import CORSMiddleware
+
 app = FastAPI(
     title="Booster API",
     description="""
@@ -36,6 +38,22 @@ app.include_router(rewards_router)
 app.include_router(settings_router)
 app.include_router(balance_router)
 app.include_router(farming_router)
+
+origins = [
+    "https://booster-app-54f649d23ab2.herokuapp.com/",
+    "https://web.telegram.org",
+    "https://t.me"
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,  # Список источников, которым разрешен доступ
+    allow_credentials=True,
+    allow_methods=["*"],  # Разрешенные методы
+    allow_headers=["*"],  # Разрешенные заголовки
+)
+
+
 @app.on_event("startup")
 async def generate_telegram_auth_hash():
     id = '13371488'
