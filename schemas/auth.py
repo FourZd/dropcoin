@@ -1,16 +1,16 @@
-from pydantic import BaseModel, Field, HttpUrl
+from pydantic import BaseModel
 from typing import Optional
 class AuthUrlResponse(BaseModel):
     url: str
 
 
 class TelegramAuthData(BaseModel):
-    id: int
+    id: str
     first_name: Optional[str]
     last_name: Optional[str]
     username: Optional[str]
-    photo_url: Optional[HttpUrl]
-    auth_date: int
+    photo_url: Optional[str]
+    auth_date: str
     hash: str
 
 
