@@ -42,7 +42,8 @@ async def get_list_of_missions(user: User = Depends(get_current_user), session: 
             "title": reward.AvailableReward.title,
             "reward": reward.AvailableReward.reward,
             "description": reward.AvailableReward.description,
-            "mission_completed": reward.mission_completed
+            "mission_completed": reward.mission_completed,
+            "tag": reward.AvailableReward.tag
         }
         for reward in rewards
     ]
