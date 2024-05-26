@@ -4,7 +4,7 @@ from services.auth import get_current_user
 from configs.db import get_session
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
-from schemas.user_settings import PutWalletRequest, PutReferrerRequest, UpdateUsernameRequest
+from schemas.user_settings import PutWalletRequest, PutReferrerRequest, UpdateUsernameRequest, PutEmailRequest
 from models.UserReward import UserReward
 from sqlalchemy.orm import selectinload
 from configs.environment import get_environment_variables
@@ -113,3 +113,9 @@ async def update_referrer(payload: PutReferrerRequest, user: User = Depends(get_
         await add_reward_and_transaction(referrer.referrer.id, 10, session)
         
     return {"message": "Referrer updated successfully and rewards issued"}
+
+@router.put("/email")
+async def update_email(payload: PutEmailRequest, user: User = Depends(get_current_user), session: AsyncSession = Depends(get_session)):
+    email = payload.email
+    user.email = email
+    await session.commit()

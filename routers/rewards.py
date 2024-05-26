@@ -23,14 +23,14 @@ async def get_list_of_missions(user: User = Depends(get_current_user), session: 
     Each mission has an id, title, reward, and description. 
     Use it for mission status tracking and to differentiate between missions.
     """
-    exclude_ids = [2, 10]
+    exclude_tags = ["referrer_reward", "referrer_of_the_referrer_reward"]
     stmt = (
         select(AvailableReward, UserReward.user_id.isnot(None).label('mission_completed'))
         .outerjoin(
             UserReward,
             (UserReward.reward_type_id == AvailableReward.id) & (UserReward.user_id == user.id)
         )
-        .filter(AvailableReward.id.notin_(exclude_ids))
+        .filter(AvailableReward.tag.notin_(exclude_tags))
         .order_by(AvailableReward.id)  # Сортировать по ID награды, если необходимо
     )
     results = await session.execute(stmt)
@@ -59,20 +59,13 @@ async def collect_points(payload: CollectPointsRequest, user: User = Depends(get
     If you have questions about missions and this endpoint's request/response, ask the employer.
     """
     mission_id = payload.mission_id
-    additional_parameter = payload.additional_parameter
-    if mission_id == 2:
-        direct_referrals = user.referrals
-        direct_referral_count = len(direct_referrals)
-        
-        second_level_referral_count = sum(len(referral.referrals) for referral in direct_referrals)
-        
-        return {
-            "detail": f"Currently invited: Directly - {direct_referral_count}, By Referrals - {second_level_referral_count}"
-        }
-    reward_collected = await check_user_reward(session, user.id, mission_id)
+    result = await session.execute(select(AvailableReward).filter(AvailableReward.id == mission_id))
+    mission = result.scalar()
+    
+    reward_collected = await check_user_reward(session, user.id, mission.tag)
     if reward_collected:
         raise HTTPException(status_code=400, detail="You've already collected the reward")
-    completed = await check_mission(mission_id, user, session, additional_parameter)
+    completed = await check_mission(mission.tag, user, session)
     
     if completed:
         await add_reward_and_transaction(user.id, mission_id, session)

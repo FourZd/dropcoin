@@ -9,5 +9,5 @@ class AvailableReward(EntityMeta):
     title = Column(String)
     reward = Column(Integer)
     description = Column(String)
-
+    tag = Column(String, unique=True)
     user_rewards = relationship("UserReward", back_populates="reward_type", uselist=True)
