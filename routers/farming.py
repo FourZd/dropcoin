@@ -16,7 +16,9 @@ router = APIRouter(
 
 
 @router.get("/farming")
-async def get_farming_status(user: User = Depends(get_current_user), session: AsyncSession = Depends(get_session)):
+async def get_farming_status(
+    user: User = Depends(get_current_user), session: AsyncSession = Depends(get_session)
+):
     """Возвращает оставшееся время до награды и текущий эквивалент полученной награды"""
 
     # Получаем последний запись о фермерстве для пользователя
@@ -40,18 +42,24 @@ async def get_farming_status(user: User = Depends(get_current_user), session: As
         earned_reward = farming.reward
     else:
         # Расчет пропорциональной части награды, на основе пройденного времени
-        earned_reward = (Decimal(elapsed_time.total_seconds()) /
-                 Decimal(total_duration.total_seconds())) * farming.reward
+        earned_reward = (
+            Decimal(elapsed_time.total_seconds())
+            / Decimal(total_duration.total_seconds())
+        ) * farming.reward
 
     return {
-        "time_left": time_left if time_left.total_seconds() > 0 else timedelta(seconds=0),
+        "time_left": (
+            time_left if time_left.total_seconds() > 0 else timedelta(seconds=0)
+        ),
         "earned_reward": round(earned_reward, 3),
         "collectable": time_left.total_seconds() <= 0,
     }
 
 
 @router.post("/start_farming")
-async def start_farming(user: User = Depends(get_current_user), session: AsyncSession = Depends(get_session)):
+async def start_farming(
+    user: User = Depends(get_current_user), session: AsyncSession = Depends(get_session)
+):
     """Начинает фермерство для пользователя"""
 
     # Проверка на наличие активного фермерства
@@ -65,7 +73,7 @@ async def start_farming(user: User = Depends(get_current_user), session: AsyncSe
         user_id=user.id,
         start_time=datetime.now(timezone.utc),
         end_time=datetime.now(timezone.utc) + timedelta(hours=8),
-        reward=57
+        reward=57,
     )
     session.add(new_farming)
     await session.commit()
@@ -74,12 +82,14 @@ async def start_farming(user: User = Depends(get_current_user), session: AsyncSe
         "message": "Farming started",
         "start_time": new_farming.start_time,
         "end_time": new_farming.end_time,
-        "reward": new_farming.reward
+        "reward": new_farming.reward,
     }
 
 
 @router.post("/collect_reward")
-async def collect_reward(user: User = Depends(get_current_user), session: AsyncSession = Depends(get_session)):
+async def collect_reward(
+    user: User = Depends(get_current_user), session: AsyncSession = Depends(get_session)
+):
     """Собирает награду за фермерство"""
 
     # Поиск активного фермерства
@@ -95,21 +105,25 @@ async def collect_reward(user: User = Depends(get_current_user), session: AsyncS
     # Создание транзакции для пользователя с полученной наградой
     rewards = [
         UserTransaction(
-            user_id=user.id,
-            profit=farming.reward,
-            timestamp=datetime.now(timezone.utc)
-        ),
-        UserTransaction(
-            user_id=user.referrer_id,
-            profit=farming.reward * Decimal('0.10'),
-            timestamp=datetime.now(timezone.utc)
-        ),
-        UserTransaction(
-            user_id=user.referrer.referrer_id,
-            profit=farming.reward * Decimal('0.025'),
-            timestamp=datetime.now(timezone.utc)
+            user_id=user.id, profit=farming.reward, timestamp=datetime.now(timezone.utc)
         )
     ]
+    if user.referrer_id != None:
+        rewards.append(
+            UserTransaction(
+                user_id=user.referrer_id,
+                profit=farming.reward * Decimal("0.10"),
+                timestamp=datetime.now(timezone.utc),
+            )
+        )
+        if user.referrer.referrer_id != None:
+            rewards.append(
+                UserTransaction(
+                    user_id=user.referrer.referrer_id,
+                    profit=farming.reward * Decimal("0.025"),
+                    timestamp=datetime.now(timezone.utc),
+                )
+            )
 
     session.add_all(rewards)
     session.delete(farming)
