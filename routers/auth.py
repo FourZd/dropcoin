@@ -28,8 +28,11 @@ async def telegram_authenticate(auth_data: TelegramAuthData, db: AsyncSession = 
     """
     data_check_string = auth_data.data_check_string
     parsed_data = parse_qs(data_check_string)
-    hash_value = parsed_data['hash'][0]
-    verified = validate(hash_value, data_check_string, BOT_TOKEN)
+    try:
+        hash_value = parsed_data['hash'][0]
+        verified = validate(hash_value, data_check_string, BOT_TOKEN)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail="Wrong auth data")
     if not verified:
         raise HTTPException(status_code=401, detail="Authentication data is tampered or invalid")
 
