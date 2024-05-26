@@ -3,7 +3,6 @@ from models.UserModel import User
 from services.auth import get_current_user
 from configs.db import get_session
 from sqlalchemy.ext.asyncio import AsyncSession
-from configs.rewards import create_default_items
 from sqlalchemy.future import select
 from models.AvailableRewards import AvailableReward
 from models.UserReward import UserReward
@@ -72,6 +71,3 @@ async def collect_points(payload: CollectPointsRequest, user: User = Depends(get
         return {"detail": "Reward collected successfully", "mission_id": mission_id}
     else:
         raise HTTPException(status_code=400, detail="Mission is not completed or results are not processed yet")
-@router.on_event("startup")
-async def startup_event():
-    await create_default_items()

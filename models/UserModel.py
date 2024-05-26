@@ -11,7 +11,7 @@ class User(EntityMeta):
     created_at = Column(DateTime(timezone=True))
     referrer_id = Column(String, ForeignKey('users.id'))
     wallet_address = Column(String)
-    email = Column(String)
+    email = Column(String, nullable=True)
 
     bets = relationship("CrashBet", back_populates="user")
     rewards = relationship("UserReward", back_populates="user")

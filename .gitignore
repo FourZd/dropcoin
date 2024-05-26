@@ -77,3 +77,6 @@ services/__pycache__/transactions.cpython-311.pyc
 routers/__pycache__/farming.cpython-311.pyc
 alembic/versions/__pycache__/4ef16a09f8fb_update_for_microservices.cpython-311.pyc
 alembic/versions/__pycache__/e7e880f57eff_make_prev_game_nullable.cpython-311.pyc
+alembic/versions/__pycache__/0833d77afd04_.cpython-311.pyc
+alembic/versions/__pycache__/a8e719bf394f_.cpython-311.pyc
+alembic/versions/__pycache__/df2fc4739b2a_.cpython-311.pyc
