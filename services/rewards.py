@@ -69,13 +69,12 @@ async def check_if_referrer_defined(user: User):
 async def check_user_reward(session: AsyncSession, user_id: str, tag: int) -> bool:
     subquery = (
         select(literal_column("1"))
-        .options(
-            joinedload(UserReward.reward_type)
-        )
+        .select_from(UserReward)
+        .join(AvailableReward, UserReward.reward_type)
         .where(
             and_(
                 UserReward.user_id == user_id,
-                UserReward.reward_type.tag == tag
+                AvailableReward.tag == tag
             )
         )
         .exists()
