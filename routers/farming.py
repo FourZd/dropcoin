@@ -126,7 +126,7 @@ async def collect_reward(
             )
 
     session.add_all(rewards)
-    session.delete(farming)
+    await session.delete(farming)
 
     await session.commit()
 
