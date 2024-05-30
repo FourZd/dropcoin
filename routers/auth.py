@@ -86,11 +86,10 @@ async def get_me(user: User = Depends(get_current_user)):
     return response_model
 
 @router.get("/is_registered")
-async def is_registered(payload: IsRegistered, db: AsyncSession = Depends(get_session)):
+async def is_registered(user_id: str, db: AsyncSession = Depends(get_session)):
     """
     Checks if a user is registered in the database.
     """
-    user_id = payload.user_id
     user = await db.execute(
         select(User).where(User.id == user_id)
     )
