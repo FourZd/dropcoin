@@ -4,9 +4,10 @@ from configs.auth import tweepy_client
 from configs.db import get_session
 from services.auth import authenticate_user, generate_jwt, validate
 from sqlalchemy.ext.asyncio import AsyncSession
-from schemas.auth import AuthUrlResponse, TelegramAuthData, TokenRefreshRequest, AuthenticateResponse, RefreshTokenResponse, UserResponse
+from schemas.auth import AuthUrlResponse, TelegramAuthData, TokenRefreshRequest, AuthenticateResponse, RefreshTokenResponse, UserResponse, IsRegistered
 from jose import jwt
 import os
+from sqlalchemy.future import select
 from models.UserModel import User
 import json
 from services.auth import get_current_user
@@ -83,3 +84,18 @@ async def get_me(user: User = Depends(get_current_user)):
     """
     response_model = UserResponse(id=user.id, username=user.username, wallet_address=user.wallet_address, referrals=user.referrals)
     return response_model
+
+@router.get("/is_registered")
+async def is_registered(payload: IsRegistered, db: AsyncSession = Depends(get_session)):
+    """
+    Checks if a user is registered in the database.
+    """
+    user_id = payload.user_id
+    user = await db.execute(
+        select(User).where(User.id == user_id)
+    )
+    user = user.scalars().first()
+    if user:
+        return {"registered": True}
+    else:
+        return {"registered": False}

@@ -35,3 +35,6 @@ class UserResponse(BaseModel):
     username: str | None
     wallet_address: str | None
     referrals: list[str] | None
+
+class IsRegistered(BaseModel):
+    user_id: int
