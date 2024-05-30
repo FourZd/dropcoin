@@ -37,4 +37,4 @@ class UserResponse(BaseModel):
     referrals: list[str] | None
 
 class IsRegistered(BaseModel):
-    user_id: int
+    user_id: str
