@@ -260,7 +260,8 @@ async def game_websocket(websocket: WebSocket):
 @router.websocket("/listen-for-bets")
 async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
-    async with aio_pika.connect_robust(f"amqp://fourzd:1FArjOL1!@{rabbitmq_host}:{rabbitmq_port}/") as connection:
+    connection = await aio_pika.connect_robust(f"amqp://fourzd:1FArjOL1!@{rabbitmq_host}:{rabbitmq_port}/")
+    async with connection:
         channel = await connection.channel()  # Open a channel
         # Declare exchange
         exchange = await channel.declare_exchange('game_bets', "fanout", durable=True)
