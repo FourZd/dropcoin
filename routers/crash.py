@@ -75,8 +75,7 @@ async def place_bet(bet_request: BetRequest, user: User = Depends(get_current_us
         "user": user.username,
         "bet": bet_request.amount
     }
-    json_data = json.dumps(user_data)
-    await publish_bet_update(json_data)
+    await publish_bet_update(user_data)
     return {"detail": "Bet placed successfully", "bet": new_bet}
 
 
@@ -141,8 +140,7 @@ async def cash_out(cash_out_request: CashOutRequest, user: User = Depends(get_cu
         "user": user.username,
         "cashout_multiplier": cash_out_request.multiplier
     }
-    json_data = json.dumps(user_data)
-    await publish_bet_update(json_data)
+    await publish_bet_update(user_data)
     return {"detail": "Cash out registered", "bet": bet}
 
 
