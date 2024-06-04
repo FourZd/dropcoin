@@ -67,7 +67,12 @@ async def place_bet(bet_request: BetRequest, user: User = Depends(get_current_us
     )
     session.add(new_bet)
     await session.commit()
-    await publish_bet_update(f"User: {user.username}, placed a bet of: {bet_request.amount}")
+    user_data = {
+        "user": user.username,
+        "bet": bet_request.amount
+    }
+    json_data = json.dumps(user_data)
+    await publish_bet_update(json_data)
     return {"detail": "Bet placed successfully", "bet": new_bet}
 
 
@@ -128,7 +133,12 @@ async def cash_out(cash_out_request: CashOutRequest, user: User = Depends(get_cu
     bet.cash_out_multiplier = cash_out_request.multiplier
     bet.cash_out_datetime = datetime.now(timezone.utc)
     await session.commit()
-    await publish_bet_update(f"User: {user.username}, cashed out at: {cash_out_request.multiplier}")
+    user_data = {
+        "user": user.username,
+        "cashout_multiplier": cash_out_request.multiplier
+    }
+    json_data = json.dumps(user_data)
+    await publish_bet_update(json_data)
     return {"detail": "Cash out registered", "bet": bet}
 
 
@@ -272,5 +282,8 @@ async def websocket_endpoint(websocket: WebSocket):
         # Consume messages
         async for message in queue:
             async with message.process():
-                # Send message data to WebSocket client
-                await websocket.send_text(message.body.decode())
+                # Преобразование текста обратно в JSON
+                json_data = json.loads(message.body.decode())
+                
+                # Отправка JSON-объекта через WebSocket
+                await websocket.send_json(json_data)

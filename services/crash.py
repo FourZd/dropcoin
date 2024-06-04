@@ -216,8 +216,12 @@ async def publish_bet_update(bet_info):
     )
     channel = await connection.channel()
     exchange = await channel.declare_exchange('game_bets', "fanout", durable=True)
+    
+    json_data = json.dumps(bet_info)  # Преобразование JSON-объекта в строку
+    
     await exchange.publish(
-        aio_pika.Message(body=bet_info.encode()),
-        routing_key=''  
+        aio_pika.Message(body=json_data.encode()),  # Отправка JSON-строки в виде байтов
+        routing_key=''
     )
+    
     await connection.close()
