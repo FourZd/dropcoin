@@ -17,8 +17,12 @@ from services.crash import publish_bet_update
 from decimal import Decimal
 import json
 import aio_pika
-
+import logging
 from configs.environment import get_environment_variables
+
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
+)
 
 env = get_environment_variables()
 rabbitmq_host = env.RABBITMQ_HOST
@@ -284,6 +288,7 @@ async def websocket_endpoint(websocket: WebSocket):
             async with message.process():
                 # Преобразование текста обратно в JSON
                 json_data = json.loads(message.body.decode())
-                
+                json_type = type(json_data)
+                logging.info(f"json type is {json_type}")
                 # Отправка JSON-объекта через WebSocket
                 await websocket.send_json(json_data)
