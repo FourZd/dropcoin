@@ -274,5 +274,3 @@ async def websocket_endpoint(websocket: WebSocket):
             async with message.process():
                 # Send message data to WebSocket client
                 await websocket.send_text(message.body.decode())
-                if websocket.client_state == WebSocket.DISCONNECTED:
-                    break
