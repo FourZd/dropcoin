@@ -46,4 +46,4 @@ class CurrentBet(BaseModel):
     time: datetime
     cash_out_multiplier: Optional[float]
     cash_out_datetime: Optional[datetime]
-    result: str
+    result: str = "pending"
