@@ -39,11 +39,11 @@ class LastGameResultResponse(BaseModel):
 class TimingResponse(BaseModel):
     current_time: datetime
     betting_close_time: datetime
-    
+
 class CurrentBet(BaseModel):
     user_id: str
     amount: float
     time: datetime
-    cash_out_multiplier: Optional(float)
-    cash_out_datetime: Optional(datetime)
+    cash_out_multiplier: Optional[float]
+    cash_out_datetime: Optional[datetime]
     result: str
