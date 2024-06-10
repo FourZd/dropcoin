@@ -10,6 +10,8 @@ from sqlalchemy.orm import selectinload
 from configs.environment import get_environment_variables
 import base64
 from services.transactions import add_reward_and_transaction
+import re
+
 TG_BOT_NAME = get_environment_variables().TG_BOT_NAME
 
 router = APIRouter(
@@ -51,7 +53,8 @@ async def check_username_availability(username: str, session: AsyncSession = Dep
     """
     if not username:
         raise HTTPException(status_code=400, detail="Username is required")
-    
+    if not re.match("^[a-zA-Z]+$", username):
+        return {"available": False, "message": "Username must contain only Latin letters"}
     user_query = select(User).where(User.username == username)
     user_result = await session.execute(user_query)
     existing_user = user_result.scalars().first()
