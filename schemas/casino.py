@@ -42,6 +42,7 @@ class TimingResponse(BaseModel):
 
 class CurrentBet(BaseModel):
     user_id: str
+    username: str
     amount: float
     time: datetime
     cash_out_multiplier: Optional[float]

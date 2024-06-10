@@ -10,7 +10,7 @@ from models.CrashState import CrashState
 from models.UserModel import User
 from models.CrashBet import CrashBet
 from services.auth import get_current_user
-from sqlalchemy.orm import selectinload
+from sqlalchemy.orm import selectinload, joinedload
 from sqlalchemy import text
 from services.balance import calculate_user_balance
 from services.crash import publish_bet_update
@@ -257,11 +257,12 @@ async def get_actual_bets(session: AsyncSession = Depends(get_session)):
     current_game = await session.execute(select(CrashState).limit(1))
     current_game: CrashState = current_game.scalars().first()
     current_game_hash = current_game.current_game_hash
-    current_game_bets = await session.execute(select(CrashBet).filter(CrashBet.hash == current_game_hash))
+    current_game_bets = await session.execute(select(CrashBet).options(joinedload(CrashBet.user)).filter(CrashBet.hash == current_game_hash))
     current_game_bets: list[CrashBet] = current_game_bets.scalars().all()
     for bet in current_game_bets:
         formatted_bet = CurrentBet(
             user_id=bet.user_id,
+            username=bet.user.username,
             amount=bet.amount,
             time=bet.time,
             cash_out_multiplier=bet.cash_out_multiplier,
