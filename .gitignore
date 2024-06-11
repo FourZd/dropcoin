@@ -80,3 +80,6 @@ alembic/versions/__pycache__/e7e880f57eff_make_prev_game_nullable.cpython-311.py
 alembic/versions/__pycache__/0833d77afd04_.cpython-311.pyc
 alembic/versions/__pycache__/a8e719bf394f_.cpython-311.pyc
 alembic/versions/__pycache__/df2fc4739b2a_.cpython-311.pyc
+alembic/versions/__pycache__/0d0370295dd8_.cpython-311.pyc
+alembic/versions/__pycache__/4cc2691f9a31_.cpython-311.pyc
+models/__pycache__/GameHistory.cpython-311.pyc
