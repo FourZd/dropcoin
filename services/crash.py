@@ -123,6 +123,28 @@ async def send_to_websocket_clients(exchange, message):
     logging.info("Message sent to websocket clients successfully")
 
 
+async def send_update_messages(exchange, data, wait_time):
+    await exchange.publish(
+        aio_pika.Message(
+            body=json.dumps({
+                "event": "start",
+                "crash_point": data["crash_point"],
+                "crash_time": data["crash_time"]
+            }).encode()
+        ),
+        routing_key=""
+    )
+    await asyncio.sleep(wait_time.total_seconds())
+    await exchange.publish(
+        aio_pika.Message(
+            body=json.dumps({
+                "event": "end",
+                "crash_point": data["crash_point"]
+            }).encode()
+        ),
+        routing_key=""
+    )
+
 async def listen_for_game():
     env = get_environment_variables()
     rabbitmq_host = env.RABBITMQ_HOST
@@ -168,9 +190,12 @@ async def listen_for_game():
                     betting_close_time = datetime.now(timezone.utc) + timedelta(
                         seconds=10
                     )
+                    
                     session_gen = get_session()
                     session = await session_gen.__anext__()
-
+                    await update_game_history(
+                        session, betting_close_time, crash_hash, crash_point, crash_time
+                    )
                     logging.info("Session started")
                     state = await session.execute(select(CrashState).limit(1))
                     state = state.scalars().first()
@@ -198,25 +223,25 @@ async def listen_for_game():
                         crash_point,
                         state,
                     )
-                    await update_game_history(
-                        session, betting_close_time, crash_hash, crash_point, crash_time
-                    )
+                    
                     logging.info("Game data updated")
 
                     await update_previous_crash_bets(session)
                     logging.info("Previous crash bets updated")
 
                     wait_time = betting_close_time - datetime.now(timezone.utc)
-                    await asyncio.sleep(wait_time.total_seconds())
 
-                    await send_to_websocket_clients(
-                        exchange,
-                        {
-                            "event": "update_game",
-                            "crash_point": crash_point,
-                            "crash_time": crash_time.isoformat(),
-                        },
+                    asyncio.create_task(
+                        send_update_messages(
+                            exchange,
+                            {
+                                "crash_point": crash_point,
+                                "crash_time": crash_time.isoformat()
+                            },
+                            wait_time
+                        )
                     )
+                    
                     logging.info("Data sent to websocket clients")
                     await session.close()
                 logging.info("message closed")

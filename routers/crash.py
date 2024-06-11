@@ -345,6 +345,7 @@ async def get_actual_bets(session: AsyncSession = Depends(get_session)):
 @router.websocket("/ws")
 async def game_websocket(websocket: WebSocket):
     await websocket.accept()
+    env = get_environment_variables()  # Не забывайте получать переменные окружения здесь
     connection = await aio_pika.connect_robust(f"amqp://fourzd:1FArjOL1!@{env.RABBITMQ_HOST}:{env.RABBITMQ_PORT}/")
     async with connection:
         channel = await connection.channel()
@@ -360,20 +361,14 @@ async def game_websocket(websocket: WebSocket):
         async for message in queue:
             async with message.process():
                 data = json.loads(message.body.decode())
-                crash_point = data['crash_point']
-                crash_time = datetime.fromisoformat(data['crash_time'])
 
-                # Отправляем сообщение о начале игры.
-                await websocket.send_json({"type": "start", "event": data['event']})
+                if data['event'] == 'start':
+                    # Отправляем сообщение о начале игры.
+                    await websocket.send_json({"type": "start", "event": data['event'], "crash_point": data['crash_point'], "crash_time": data['crash_time']})
 
-                # Ожидаем до времени 'crash_time'.
-                wait_time = (
-                    crash_time - datetime.now(timezone.utc)).total_seconds()
-                if wait_time > 0:
-                    await asyncio.sleep(wait_time)
-
-                # Отправляем сообщение о завершении игры с финальным коэффициентом.
-                await websocket.send_json({"type": "end", "final_ratio": str(crash_point)})
+                elif data['event'] == 'end':
+                    # Отправляем сообщение о завершении игры с финальным коэффициентом.
+                    await websocket.send_json({"type": "end", "final_ratio": str(data['crash_point'])})
 
 
 @router.websocket("/listen-for-bets")
