@@ -133,7 +133,7 @@ async def send_update_messages(exchange, crash_point, betting_close_time, crash_
         aio_pika.Message(
             body=json.dumps({
                 "event": "start",
-                "time": betting_close_time
+                "time": betting_close_time.isoformat()  # Преобразуем datetime в строку
             }).encode()
         ),
         routing_key=""
@@ -148,7 +148,7 @@ async def send_update_messages(exchange, crash_point, betting_close_time, crash_
         aio_pika.Message(
             body=json.dumps({
                 "event": "end",
-                "time": crash_time,
+                "time": crash_time.isoformat(),  # Преобразуем datetime в строку
                 "crash_point": crash_point
             }).encode()
         ),
