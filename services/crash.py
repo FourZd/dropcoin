@@ -16,7 +16,7 @@ import aio_pika
 import json
 from configs.environment import get_environment_variables
 import logging
-
+from models.GameHistory import GameHistory
 env = get_environment_variables()
 rabbitmq_host = env.RABBITMQ_HOST
 rabbitmq_port = env.RABBITMQ_PORT
@@ -24,6 +24,19 @@ rabbitmq_port = env.RABBITMQ_PORT
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
 )
+
+
+async def update_game_history(
+    session, betting_close_time, crash_hash, crash_point, crash_time
+):
+    game = GameHistory(
+        game_hash=crash_hash,
+        result=crash_point,
+        start_time=betting_close_time,
+        end_time = crash_time
+    )
+    session.add(game)
+    await session.commit()
 
 
 async def update_game_data(
@@ -84,7 +97,8 @@ async def update_previous_crash_bets(session: AsyncSession):
         UserTransaction(
             user_id=bet.user_id,
             profit=(
-                (bet.cash_out_multiplier - 1) * bet.amount  # Вычитаем 1, чтобы учесть основную ставку
+                # Вычитаем 1, чтобы учесть основную ставку
+                (bet.cash_out_multiplier - 1) * bet.amount
                 if bet.result == "win"
                 else -bet.amount
             ),
@@ -162,7 +176,8 @@ async def listen_for_game():
                     state = state.scalars().first()
 
                     if not state:
-                        logging.info("No existing state found, creating new state")
+                        logging.info(
+                            "No existing state found, creating new state")
                         state = CrashState(
                             current_game_hash=crash_hash,
                             current_result=Decimal(0),
@@ -182,6 +197,9 @@ async def listen_for_game():
                         crash_hash,
                         crash_point,
                         state,
+                    )
+                    await update_game_history(
+                        session, betting_close_time, crash_hash, crash_point, crash_time
                     )
                     logging.info("Game data updated")
 
@@ -216,12 +234,13 @@ async def publish_bet_update(bet_info):
     )
     channel = await connection.channel()
     exchange = await channel.declare_exchange('game_bets', "fanout", durable=True)
-    
+
     json_data = json.dumps(bet_info)  # Преобразование JSON-объекта в строку
-    
+
     await exchange.publish(
-        aio_pika.Message(body=json_data.encode()),  # Отправка JSON-строки в виде байтов
+        # Отправка JSON-строки в виде байтов
+        aio_pika.Message(body=json_data.encode()),
         routing_key=''
     )
-    
+
     await connection.close()

@@ -20,6 +20,8 @@ import aio_pika
 import logging
 from configs.environment import get_environment_variables
 from typing import List
+from models.GameHistory import GameHistory
+
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
 )
@@ -122,6 +124,73 @@ async def cancel_bet(user: User = Depends(get_current_user), session: AsyncSessi
         # Если ставка не найдена, возвращаем ошибку
         raise HTTPException(status_code=404, detail="Bet not found.")
 
+@router.get("/games")
+async def get_previous_games(limit: int, db: AsyncSession = Depends(get_session)):
+    # Define the current time for filtering
+    current_time = datetime.utcnow()
+
+    # Query to fetch games with manual join on game_hash and eager loading of user info
+    stmt = (
+        select(GameHistory)
+        .where(GameHistory.end_time < current_time)
+        .order_by(GameHistory.end_time.desc())
+        .limit(limit)
+    )
+
+    # Execute the query to get games
+    result = await db.execute(stmt)
+    games = result.scalars().all()
+
+    # Extract game_hashes for fetching bets
+    game_hashes = [game.game_hash for game in games]
+
+    # Fetch all bets for the games in a single query
+    bets_stmt = (
+        select(CrashBet)
+        .options(selectinload(CrashBet.user))
+        .where(CrashBet.hash.in_(game_hashes))
+    )
+    bets_result = await db.execute(bets_stmt)
+    bets = bets_result.scalars().all()
+
+    # Group bets by game_hash
+    bets_by_game = {}
+    for bet in bets:
+        if bet.hash not in bets_by_game:
+            bets_by_game[bet.hash] = []
+        bets_by_game[bet.hash].append(bet)
+
+    # Prepare the response data
+    response = []
+    for game in games:
+        game_data = {
+            "id": game.id,
+            "game_hash": game.game_hash,
+            "result": game.result,
+            "start_time": game.start_time,
+            "end_time": game.end_time,
+            "bets": [],
+            "total_bet_amount": 0
+        }
+
+        if game.game_hash in bets_by_game:
+            for bet in bets_by_game[game.game_hash]:
+                game_data["bets"].append({
+                    "id": bet.id,
+                    "user_id": bet.user_id,
+                    "username": bet.user.username,
+                    "amount": bet.amount,
+                    "time": bet.time,
+                    "hash": bet.hash,
+                    "cash_out_multiplier": bet.cash_out_multiplier,
+                    "cash_out_datetime": bet.cash_out_datetime,
+                    "result": bet.result
+                })
+                game_data["total_bet_amount"] += bet.amount
+
+        response.append(game_data)
+
+    return response
 
 @router.post("/cash_out", response_model=BetResponse)
 async def cash_out(cash_out_request: CashOutRequest, user: User = Depends(get_current_user), session: AsyncSession = Depends(get_session)):
