@@ -123,23 +123,33 @@ async def send_to_websocket_clients(exchange, message):
     logging.info("Message sent to websocket clients successfully")
 
 
-async def send_update_messages(exchange, data, wait_time):
+async def send_update_messages(exchange, crash_point, betting_close_time, crash_time):
+    # Ожидаем до времени betting_close_time для отправки start события
+    wait_time_to_start = (betting_close_time - datetime.now(timezone.utc)).total_seconds()
+    if wait_time_to_start > 0:
+        await asyncio.sleep(wait_time_to_start)
+
     await exchange.publish(
         aio_pika.Message(
             body=json.dumps({
                 "event": "start",
-                "crash_point": data["crash_point"],
-                "crash_time": data["crash_time"]
+                "time": betting_close_time
             }).encode()
         ),
         routing_key=""
     )
-    await asyncio.sleep(wait_time.total_seconds())
+
+    # Ожидаем до времени crash_time для отправки end события
+    wait_time_to_end = (crash_time - datetime.now(timezone.utc)).total_seconds()
+    if wait_time_to_end > 0:
+        await asyncio.sleep(wait_time_to_end)
+
     await exchange.publish(
         aio_pika.Message(
             body=json.dumps({
                 "event": "end",
-                "crash_point": data["crash_point"]
+                "time": crash_time,
+                "crash_point": crash_point
             }).encode()
         ),
         routing_key=""
@@ -229,16 +239,12 @@ async def listen_for_game():
                     await update_previous_crash_bets(session)
                     logging.info("Previous crash bets updated")
 
-                    wait_time = betting_close_time - datetime.now(timezone.utc)
-
                     asyncio.create_task(
                         send_update_messages(
                             exchange,
-                            {
-                                "crash_point": crash_point,
-                                "crash_time": crash_time.isoformat()
-                            },
-                            wait_time
+                            crash_point,
+                            betting_close_time,  # Передаем betting_close_time для start
+                            crash_time
                         )
                     )
                     

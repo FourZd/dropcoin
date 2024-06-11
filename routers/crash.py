@@ -364,11 +364,11 @@ async def game_websocket(websocket: WebSocket):
 
                 if data['event'] == 'start':
                     # Отправляем сообщение о начале игры.
-                    await websocket.send_json({"type": "start", "event": data['event'], "crash_point": data['crash_point'], "crash_time": data['crash_time']})
+                    await websocket.send_json({"type": "start", "event": data['event'], "time": data['time']})
 
                 elif data['event'] == 'end':
                     # Отправляем сообщение о завершении игры с финальным коэффициентом.
-                    await websocket.send_json({"type": "end", "final_ratio": str(data['crash_point'])})
+                    await websocket.send_json({"type": "end", "time": data['time'], "final_ratio": str(data['crash_point'])})
 
 
 @router.websocket("/listen-for-bets")
