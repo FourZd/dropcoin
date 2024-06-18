@@ -27,7 +27,7 @@ async def telegram_authenticate(auth_data: TelegramAuthData, db: AsyncSession = 
     Authenticates a user using the Telegram data sent after user authentication in Telegram.
     Verifies the hash to ensure the data is from Telegram.
     """
-    print("Auth data telegram azazbqsiuxnbuisqiufdnqwuifnduiwqnfuiqwnuifqwnufiqwnui", auth_data)
+    print("Auth data telegram azazbqsiuxnbuisqiufdnqwuifnduiwqnfuiqwnuifqwnufiqwnui", auth_data.data_check_string)
     data_check_string = auth_data.data_check_string
     parsed_data = parse_qs(data_check_string)
     try:
