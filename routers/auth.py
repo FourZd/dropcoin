@@ -32,9 +32,7 @@ async def telegram_authenticate(auth_data: TelegramAuthData, db: AsyncSession = 
 
     # Remove start_param if it exists
     parsed_data = parse_qs(data_check_string)
-    if 'start_param' in parsed_data:
-        del parsed_data['start_param']
-
+    print("ABOBAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA", parsed_data)
     # Recreate the data_check_string without start_param
     filtered_data_check_string = "&".join([f"{key}={value[0]}" for key, value in parsed_data.items()])
 
