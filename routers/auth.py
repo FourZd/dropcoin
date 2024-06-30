@@ -29,16 +29,25 @@ async def telegram_authenticate(auth_data: TelegramAuthData, db: AsyncSession = 
     """
     print("Auth data telegram azazbqsiuxnbuisqiufdnqwuifnduiwqnfuiqwnuifqwnufiqwnui", auth_data.data_check_string)
     data_check_string = auth_data.data_check_string
+
+    # Remove start_param if it exists
     parsed_data = parse_qs(data_check_string)
+    if 'start_param' in parsed_data:
+        del parsed_data['start_param']
+
+    # Recreate the data_check_string without start_param
+    filtered_data_check_string = "&".join([f"{key}={value[0]}" for key, value in parsed_data.items()])
+
     try:
         hash_value = parsed_data['hash'][0]
-        verified = validate(hash_value, data_check_string, BOT_TOKEN)
+        verified = validate(hash_value, filtered_data_check_string, BOT_TOKEN)
     except Exception as e:
         raise HTTPException(status_code=400, detail="Wrong auth data")
+    
     if not verified:
         raise HTTPException(status_code=401, detail="Authentication data is tampered or invalid")
 
-    # Предполагаем, что auth_data уже содержит все необходимые данные.
+    # Assume auth_data already contains all necessary data.
     user_json = parsed_data["user"][0]
     user_data = json.loads(user_json)
     user_id = user_data["id"]
@@ -48,7 +57,7 @@ async def telegram_authenticate(auth_data: TelegramAuthData, db: AsyncSession = 
         return JSONResponse(content={"status": "success", "access_token": tokens[0], "refresh_token": tokens[1]})
     else:
         raise HTTPException(status_code=400, detail="Authentication failed or user could not be created.")
-    
+
 
 @router.post("/token/refresh", response_model=RefreshTokenResponse)
 async def refresh_token(request: TokenRefreshRequest, db: AsyncSession = Depends(get_session)):

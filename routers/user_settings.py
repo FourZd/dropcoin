@@ -55,8 +55,8 @@ async def check_username_availability(username: str, session: AsyncSession = Dep
         raise HTTPException(status_code=400, detail="Username is required")
     if len(username) < 4 or len(username) > 16:
         return {"available": False, "message": "Username must be between 4 and 16 characters"}
-    if not re.match("^[a-zA-Z]+$", username):
-        return {"available": False, "message": "Username must contain only Latin letters"}
+    if not re.match("^[a-zA-Z0-9]+$", username):
+        return {"available": False, "message": "Username must contain only Latin letters and numbers"}
     user_query = select(User).where(User.username == username)
     user_result = await session.execute(user_query)
     existing_user = user_result.scalars().first()
