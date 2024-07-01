@@ -67,7 +67,7 @@ def validate(hash_str, init_data, token, c_str="WebAppData"):
     token - Telegram bot's token
     c_str - constant string (default = "WebAppData")
     """
-
+    print("Validation 1", init_data)
     init_data = sorted(
         [
             chunk.split("=")
@@ -76,8 +76,9 @@ def validate(hash_str, init_data, token, c_str="WebAppData"):
         ],
         key=lambda x: x[0],
     )
+    print("Validation 2", init_data)
     init_data = "\n".join([f"{rec[0]}={rec[1]}" for rec in init_data])
-
+    print("Validation 3", init_data)
     secret_key = hmac.new(c_str.encode(), token.encode(), sha256).digest()
     data_check = hmac.new(secret_key, init_data.encode(), sha256)
 
